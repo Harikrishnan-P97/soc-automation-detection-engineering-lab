@@ -1,0 +1,1963 @@
+{
+  "name": "SOC - Host Isolation Action",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "slack-isolation-action",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        -208
+      ],
+      "id": "7400a8ee-079c-428c-be60-ca11d95bd780",
+      "name": "Webhook",
+      "webhookId": "ed7f76a1-1ddf-4965-aec1-d093c297cd21"
+    },
+    {
+      "parameters": {
+        "jsCode": "const raw = $json.body?.payload;\n\nif (!raw) {\n  throw new Error(\"No payload received from Slack\");\n}\n\nconst payload = JSON.parse(decodeURIComponent(raw));\n\nconst action = payload.actions?.[0];\nconst actionId = action?.action_id;\nconst actionValue = action?.value; // \"isolate_{alert_id}_{host}\"\n\n// Parse value: isolate_SOC-2025-001_DESKTOP-ABC123\nconst parts = actionValue?.split(\"_\") || [];\n// parts[0] = \"isolate\", parts[1] = alert_id prefix, etc.\n// Since alert_id itself contains dashes (SOC-2025-001), we need smarter parsing\n\nconst withoutPrefix = actionValue?.replace(/^(isolate_|unisolate_)/, \"\") || \"\";\n// Now: \"SOC-2025-001_DESKTOP-ABC123\"\n// Split on LAST underscore-separated segment that looks like a hostname\nconst lastUnderscore = withoutPrefix.lastIndexOf(\"_\");\nconst alertId = withoutPrefix.substring(0, lastUnderscore);\nconst host = withoutPrefix.substring(lastUnderscore + 1);\n\nreturn [{\n  json: {\n    action_id: actionId,\n    alert_id: alertId,\n    host: host,\n    slack_user: payload.user?.name || payload.user?.id || \"unknown\",\n    slack_user_id: payload.user?.id || \"\",\n    channel_id: payload.channel?.id || \"\",\n    message_ts: payload.message?.ts || \"\",        // needed to update original message\n    response_url: payload.response_url || \"\",     // for updating message\n    raw_payload: payload\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        224,
+        -208
+      ],
+      "id": "7ab5c0ac-0754-4e7e-a1e4-d488c310a3ba",
+      "name": "Parse Slack Payload"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "0ea100cc-786c-4611-b4da-53a126b1f9d5",
+              "leftValue": "={{ $json.action_id }}",
+              "rightValue": "host",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        448,
+        -208
+      ],
+      "id": "008ca108-6a47-4f06-928b-346dcdeb0802",
+      "name": "Is Isolate Action?"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.limacharlie.io/v1/c0a09279-7259-4d36-a22c-8ef52dca1e7e/isolation",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $('Get JWT').item.json.jwt }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1568,
+        -400
+      ],
+      "id": "4bac8bfd-83e1-4d12-b50e-c0201f8d4f8d",
+      "name": "Isolate Host"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "dataTableId": {
+          "__rl": true,
+          "value": "oDfEbugU7spN85wj",
+          "mode": "list",
+          "cachedResultName": "SOC-Alert-Dashboard-Table",
+          "cachedResultUrl": "/projects/04kLsh8wTSUwZTmc/datatables/oDfEbugU7spN85wj"
+        },
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "alert_id",
+              "keyValue": "={{ $('Parse Slack Payload').item.json.alert_id }}"
+            }
+          ]
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "soc_id_fallback": false,
+            "status": "contained",
+            "analyst": "Analyst L1",
+            "updated_at": "={{ $now.toISO() }}",
+            "notes": "={{ '[CONTAINED] Host isolated via LimaCharlie at ' + $now.toISO() + ' by Analyst L1' }}",
+            "alert_id": "={{ $('Parse Slack Payload').item.json.alert_id }}",
+            "risk_score": 0,
+            "attempts": 0,
+            "vt_score": 0
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "alert_id",
+              "displayName": "alert_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "timestamp",
+              "displayName": "timestamp",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "severity",
+              "displayName": "severity",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "alert_name",
+              "displayName": "alert_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "rule_name",
+              "displayName": "rule_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "host",
+              "displayName": "host",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "user",
+              "displayName": "user",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "source",
+              "displayName": "source",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "mitre_tactic",
+              "displayName": "mitre_tactic",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "mitre_technique",
+              "displayName": "mitre_technique",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "analyst",
+              "displayName": "analyst",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "event_source",
+              "displayName": "event_source",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "index_name",
+              "displayName": "index_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "src_ip",
+              "displayName": "src_ip",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "dest_ip",
+              "displayName": "dest_ip",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "dest_port",
+              "displayName": "dest_port",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "asset_type",
+              "displayName": "asset_type",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "environment",
+              "displayName": "environment",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "risk_score",
+              "displayName": "risk_score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "raw_event",
+              "displayName": "raw_event",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "splunk_link",
+              "displayName": "splunk_link",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "notes",
+              "displayName": "notes",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "description",
+              "displayName": "description",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "event_id",
+              "displayName": "event_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "attempts",
+              "displayName": "attempts",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "suspicious_flag",
+              "displayName": "suspicious_flag",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "CommandLine",
+              "displayName": "CommandLine",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "event_time",
+              "displayName": "event_time",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "alert_type",
+              "displayName": "alert_type",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "logon_type",
+              "displayName": "logon_type",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "parent_process",
+              "displayName": "parent_process",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "process_name",
+              "displayName": "process_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "suspicious_process",
+              "displayName": "suspicious_process",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "file_hash",
+              "displayName": "file_hash",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "http_method",
+              "displayName": "http_method",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "status_code",
+              "displayName": "status_code",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "user_agent",
+              "displayName": "user_agent",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "uri",
+              "displayName": "uri",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "transaction_id",
+              "displayName": "transaction_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "created_at",
+              "displayName": "created_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "updated_at",
+              "displayName": "updated_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "investigating_at",
+              "displayName": "investigating_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "escalated_at",
+              "displayName": "escalated_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "escalated_by",
+              "displayName": "escalated_by",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "false_positive_at",
+              "displayName": "false_positive_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "closed_at",
+              "displayName": "closed_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "resolved_at",
+              "displayName": "resolved_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "vt_score",
+              "displayName": "vt_score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "vt_label",
+              "displayName": "vt_label",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "file_name",
+              "displayName": "file_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "soc_id_fallback",
+              "displayName": "soc_id_fallback",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "boolean",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        1792,
+        -400
+      ],
+      "id": "8f9e933c-b428-425f-839e-f1f3237bd10b",
+      "name": "Update Alert - Contained"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Parse Slack Payload').item.json.response_url }}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"replace_original\": true,\n  \"text\": \"✅ Host isolation triggered\",\n  \"blocks\": [\n    {\n      \"type\": \"section\",\n      \"text\": {\n        \"type\": \"mrkdwn\",\n        \"text\": \"✅ *Host Isolated* | Alert `{{ $('Parse Slack Payload').item.json.alert_id }}`\\n*Host:* {{ $('Parse Slack Payload').item.json.host }}\\n*Triggered by:* Analyst L1\\n*Sensor ID:* c0a09279-7259-4d36-a22c-8ef52dca1e7e\\n*Time:* {{ $now.toISO() }}\"\n      }\n    },\n    {\n      \"type\": \"context\",\n      \"elements\": [\n        {\n          \"type\": \"mrkdwn\",\n          \"text\": \"🔴 This host has been network-isolated via LimaCharlie EDR\"\n        }\n      ]\n    }\n  ]\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        2240,
+        -400
+      ],
+      "id": "4218cf57-f0cc-4de6-a381-a7a1d188b9a8",
+      "name": "Slack - Update Message",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://jwt.limacharlie.io",
+        "sendBody": true,
+        "contentType": "form-urlencoded",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "oid",
+              "value": "fb95bd6f-a086-4370-9e29-0128e51262a9"
+            },
+            {
+              "name": "secret",
+              "value": "00ec7f68-c475-489c-9cc2-edf81e7970f1"
+            },
+            {
+              "name": "ttl",
+              "value": "3600"
+            },
+            {
+              "name": "permissions",
+              "value": "sensor.task"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1344,
+        -400
+      ],
+      "id": "e2c46b58-b692-4788-b143-c346f23a23ea",
+      "name": "Get JWT"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://slack.com/api/chat.postMessage",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"channel\": \"#soc-alerts\",\n  \"text\": \"🔴 HOST ISOLATED\",\n  \"blocks\": [\n    {\n      \"type\": \"header\",\n      \"text\": {\n        \"type\": \"plain_text\",\n        \"text\": \"🔴 HOST ISOLATED\",\n        \"emoji\": true\n      }\n    },\n    {\n      \"type\": \"section\",\n      \"text\": {\n        \"type\": \"mrkdwn\",\n        \"text\": \"*🆔 Alert Details*\\n──────────────\"\n      }\n    },\n    {\n      \"type\": \"section\",\n      \"fields\": [\n        {\n          \"type\": \"mrkdwn\",\n          \"text\": \"*Alert ID*\\n{{ $('Parse Slack Payload').item.json.alert_id }}\"\n        },\n        {\n          \"type\": \"mrkdwn\",\n          \"text\": \"*🖥️ Host*\\n{{ $('Parse Slack Payload').item.json.host }}\"\n        },\n        {\n          \"type\": \"mrkdwn\",\n          \"text\": \"*📋 Alert Name*\\n{{ $('Fetch Alert Details').item.json.alert_name }}\"\n        },\n        {\n          \"type\": \"mrkdwn\",\n          \"text\": \"*📜 Rule*\\n{{ $('Fetch Alert Details').item.json.rule_name }}\"\n        },\n        {\n          \"type\": \"mrkdwn\",\n          \"text\": \"*🎯 MITRE Tactic*\\n{{ $('Fetch Alert Details').item.json.mitre_tactic }}\"\n        },\n        {\n          \"type\": \"mrkdwn\",\n          \"text\": \"*🔬 MITRE Technique*\\n{{ $('Fetch Alert Details').item.json.mitre_technique }}\"\n        },\n        {\n          \"type\": \"mrkdwn\",\n          \"text\": \"*⚠️ Risk Score*\\n{{ $('Fetch Alert Details').item.json.risk_score }}\"\n        }\n      ]\n    },\n    {\n      \"type\": \"divider\"\n    },\n    {\n      \"type\": \"section\",\n      \"text\": {\n        \"type\": \"mrkdwn\",\n        \"text\": \"*🔒 Containment Details*\\n──────────────\"\n      }\n    },\n    {\n      \"type\": \"section\",\n      \"fields\": [\n        {\n          \"type\": \"mrkdwn\",\n          \"text\": \"*🔐 Sensor ID*\\nc0a09279-7259-4d36-a22c-8ef52dca1e7e\"\n        },\n        {\n          \"type\": \"mrkdwn\",\n          \"text\": \"*👨‍💻 Isolated By*\\nAnalyst L1\"\n        },\n        {\n          \"type\": \"mrkdwn\",\n          \"text\": \"*🕒 Time*\\n{{ $now.toISO() }}\"\n        },\n        {\n          \"type\": \"mrkdwn\",\n          \"text\": \"*📊 Status*\\nContained\"\n        }\n      ]\n    },\n    {\n      \"type\": \"divider\"\n    },\n    {\n      \"type\": \"actions\",\n      \"elements\": [\n        {\n          \"type\": \"button\",\n          \"text\": {\n            \"type\": \"plain_text\",\n            \"text\": \"✅ Unisolate Host\",\n            \"emoji\": true\n          },\n          \"style\": \"primary\",\n          \"value\": \"unisolate_{{ $('Parse Slack Payload').item.json.alert_id }}_{{ $('Parse Slack Payload').item.json.host }}\",\n          \"action_id\": \"unisolate_host\"\n        }\n      ]\n    },\n    {\n      \"type\": \"context\",\n      \"elements\": [\n        {\n          \"type\": \"mrkdwn\",\n          \"text\": \"🔴 *Host is network-isolated via LimaCharlie EDR* | Click Unisolate Host once remediation is confirmed.\"\n        }\n      ]\n    }\n  ]\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        2464,
+        -400
+      ],
+      "id": "77fcb4eb-8ff7-4238-85de-cec370b8da56",
+      "name": "Slack - Isolation Confirmed",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "ZVAT5Tbb7FVgGahw",
+          "name": "Header Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "660d1732-d47b-41a4-bf88-dbdd0e140647",
+              "leftValue": "={{ $('Parse Slack Payload').item.json.action_id }}",
+              "rightValue": "isolate_host",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        896,
+        -304
+      ],
+      "id": "7a9b394e-f426-42d1-b6e8-3f810df86b06",
+      "name": "Is Isolate or Unisolate?"
+    },
+    {
+      "parameters": {
+        "method": "DELETE",
+        "url": "https://api.limacharlie.io/v1/c0a09279-7259-4d36-a22c-8ef52dca1e7e/isolation",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{$('Get JWT1').item.json.jwt}}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1568,
+        -208
+      ],
+      "id": "eb79b874-ae54-40dc-b970-94c05148515d",
+      "name": "Unisolate Host"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "dataTableId": {
+          "__rl": true,
+          "value": "oDfEbugU7spN85wj",
+          "mode": "list",
+          "cachedResultName": "SOC-Alert-Dashboard-Table",
+          "cachedResultUrl": "/projects/04kLsh8wTSUwZTmc/datatables/oDfEbugU7spN85wj"
+        },
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "alert_id",
+              "keyValue": "={{ $('Parse Slack Payload').item.json.alert_id }}"
+            }
+          ]
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "soc_id_fallback": false,
+            "status": "investigating",
+            "analyst": "Analyst L1",
+            "updated_at": "={{ $now.toISO() }}",
+            "notes": "={{ '[UNISOLATED] Host released via LimaCharlie at ' + $now.toISO() + ' by Analyst L1' }}",
+            "investigating_at": "={{ $now.toISO() }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "alert_id",
+              "displayName": "alert_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "timestamp",
+              "displayName": "timestamp",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "severity",
+              "displayName": "severity",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "alert_name",
+              "displayName": "alert_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "rule_name",
+              "displayName": "rule_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "host",
+              "displayName": "host",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "user",
+              "displayName": "user",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "source",
+              "displayName": "source",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "mitre_tactic",
+              "displayName": "mitre_tactic",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "mitre_technique",
+              "displayName": "mitre_technique",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "analyst",
+              "displayName": "analyst",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "event_source",
+              "displayName": "event_source",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "index_name",
+              "displayName": "index_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "src_ip",
+              "displayName": "src_ip",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "dest_ip",
+              "displayName": "dest_ip",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "dest_port",
+              "displayName": "dest_port",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "asset_type",
+              "displayName": "asset_type",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "environment",
+              "displayName": "environment",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "risk_score",
+              "displayName": "risk_score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "raw_event",
+              "displayName": "raw_event",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "splunk_link",
+              "displayName": "splunk_link",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "notes",
+              "displayName": "notes",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "description",
+              "displayName": "description",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "event_id",
+              "displayName": "event_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "attempts",
+              "displayName": "attempts",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "suspicious_flag",
+              "displayName": "suspicious_flag",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "CommandLine",
+              "displayName": "CommandLine",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "event_time",
+              "displayName": "event_time",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "alert_type",
+              "displayName": "alert_type",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "logon_type",
+              "displayName": "logon_type",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "parent_process",
+              "displayName": "parent_process",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "process_name",
+              "displayName": "process_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "suspicious_process",
+              "displayName": "suspicious_process",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "file_hash",
+              "displayName": "file_hash",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "http_method",
+              "displayName": "http_method",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "status_code",
+              "displayName": "status_code",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "user_agent",
+              "displayName": "user_agent",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "uri",
+              "displayName": "uri",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "transaction_id",
+              "displayName": "transaction_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "created_at",
+              "displayName": "created_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "updated_at",
+              "displayName": "updated_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "investigating_at",
+              "displayName": "investigating_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "escalated_at",
+              "displayName": "escalated_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "escalated_by",
+              "displayName": "escalated_by",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "false_positive_at",
+              "displayName": "false_positive_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "closed_at",
+              "displayName": "closed_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "resolved_at",
+              "displayName": "resolved_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "vt_score",
+              "displayName": "vt_score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "vt_label",
+              "displayName": "vt_label",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "file_name",
+              "displayName": "file_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "soc_id_fallback",
+              "displayName": "soc_id_fallback",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "boolean",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        1792,
+        -208
+      ],
+      "id": "a60e9195-4b34-4576-803c-f802a881f19e",
+      "name": "Update Alert - Unisolated"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://slack.com/api/chat.postMessage",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"channel\": \"#soc-alerts\",\n  \"text\": \"✅ HOST UNISOLATED\",\n  \"blocks\": [\n    {\n      \"type\": \"header\",\n      \"text\": {\n        \"type\": \"plain_text\",\n        \"text\": \"✅ HOST UNISOLATED\",\n        \"emoji\": true\n      }\n    },\n    {\n      \"type\": \"section\",\n      \"text\": {\n        \"type\": \"mrkdwn\",\n        \"text\": \"*🆔 Alert Details*\\n──────────────\"\n      }\n    },\n    {\n      \"type\": \"section\",\n      \"fields\": [\n        {\n          \"type\": \"mrkdwn\",\n          \"text\": \"*Alert ID*\\n{{ $('Parse Slack Payload').item.json.alert_id }}\"\n        },\n        {\n          \"type\": \"mrkdwn\",\n          \"text\": \"*🖥️ Host*\\n{{ $('Parse Slack Payload').item.json.host }}\"\n        },\n        {\n          \"type\": \"mrkdwn\",\n          \"text\": \"*📋 Alert Name*\\n{{ $('Fetch Alert Details (Unisolated)').item.json.alert_name }}\"\n        },\n        {\n          \"type\": \"mrkdwn\",\n          \"text\": \"*📜 Rule*\\n{{ $('Fetch Alert Details (Unisolated)').item.json.rule_name }}\"\n        },\n        {\n          \"type\": \"mrkdwn\",\n          \"text\": \"*🎯 MITRE Tactic*\\n{{ $('Fetch Alert Details (Unisolated)').item.json.mitre_tactic }}\"\n        },\n        {\n          \"type\": \"mrkdwn\",\n          \"text\": \"*🔬 MITRE Technique*\\n{{ $('Fetch Alert Details (Unisolated)').item.json.mitre_technique }}\"\n        }\n      ]\n    },\n    {\n      \"type\": \"divider\"\n    },\n    {\n      \"type\": \"section\",\n      \"text\": {\n        \"type\": \"mrkdwn\",\n        \"text\": \"*🔓 Release Details*\\n──────────────\"\n      }\n    },\n    {\n      \"type\": \"section\",\n      \"fields\": [\n        {\n          \"type\": \"mrkdwn\",\n          \"text\": \"*🔐 Sensor ID*\\nc0a09279-7259-4d36-a22c-8ef52dca1e7e\"\n        },\n        {\n          \"type\": \"mrkdwn\",\n          \"text\": \"*👨‍💻 Released By*\\nAnalyst L1\"\n        },\n        {\n          \"type\": \"mrkdwn\",\n          \"text\": \"*🕒 Time*\\n{{ $now.toISO() }}\"\n        },\n        {\n          \"type\": \"mrkdwn\",\n          \"text\": \"*📊 Status*\\nInvestigating\"\n        }\n      ]\n    },\n    {\n      \"type\": \"divider\"\n    },\n    {\n      \"type\": \"context\",\n      \"elements\": [\n        {\n          \"type\": \"mrkdwn\",\n          \"text\": \"🟢 *Host has been returned to normal network access via LimaCharlie EDR* | Investigation continues — verify endpoint integrity before closing.\"\n        }\n      ]\n    }\n  ]\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        2464,
+        -208
+      ],
+      "id": "1f55522d-a26e-4611-8f7a-cece6d5c50a2",
+      "name": "Slack - Unisolation Confirmed",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "ZVAT5Tbb7FVgGahw",
+          "name": "Header Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://jwt.limacharlie.io",
+        "sendBody": true,
+        "contentType": "form-urlencoded",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "oid",
+              "value": "fb95bd6f-a086-4370-9e29-0128e51262a9"
+            },
+            {
+              "name": "secret",
+              "value": "00ec7f68-c475-489c-9cc2-edf81e7970f1"
+            },
+            {
+              "name": "ttl",
+              "value": "3600"
+            },
+            {
+              "name": "permissions",
+              "value": "sensor.task"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1344,
+        -208
+      ],
+      "id": "92e007d7-28a0-42fb-92cf-1dbfa95ec437",
+      "name": "Get JWT1"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Parse Slack Payload').item.json.response_url }}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"replace_original\": true,\n  \"text\": \"✅ Host unisolated\",\n  \"blocks\": [\n    {\n      \"type\": \"section\",\n      \"text\": {\n        \"type\": \"mrkdwn\",\n        \"text\": \"✅ *Host Unisolated* | Alert `{{ $('Parse Slack Payload').item.json.alert_id }}`\\n*Host:* {{ $('Parse Slack Payload').item.json.host }}\\n*Released by:* Analyst L1\\n*Time:* {{ $now.toISO() }}\"\n      }\n    },\n    {\n      \"type\": \"context\",\n      \"elements\": [\n        {\n          \"type\": \"mrkdwn\",\n          \"text\": \"🟢 Host has been returned to normal network access via LimaCharlie EDR\"\n        }\n      ]\n    }\n  ]\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        2240,
+        -208
+      ],
+      "id": "a7b1e708-f1a7-4f50-9aaa-4929fc0e845c",
+      "name": "Slack - Update Unisolation Message",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "value": "oDfEbugU7spN85wj",
+          "mode": "list",
+          "cachedResultName": "SOC-Alert-Dashboard-Table",
+          "cachedResultUrl": "/projects/04kLsh8wTSUwZTmc/datatables/oDfEbugU7spN85wj"
+        },
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "alert_id",
+              "keyValue": "={{ $('Parse Slack Payload').item.json.alert_id }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        1120,
+        -400
+      ],
+      "id": "0cc6718b-d77e-4173-9672-f21707ba9173",
+      "name": "Fetch Alert Details"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "value": "oDfEbugU7spN85wj",
+          "mode": "list",
+          "cachedResultName": "SOC-Alert-Dashboard-Table",
+          "cachedResultUrl": "/projects/04kLsh8wTSUwZTmc/datatables/oDfEbugU7spN85wj"
+        },
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "alert_id",
+              "keyValue": "={{ $('Parse Slack Payload').item.json.alert_id }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        1120,
+        -208
+      ],
+      "id": "2fd817a5-19e1-44a8-a572-e536ad39eae4",
+      "name": "Fetch Alert Details (Unisolated)"
+    },
+    {
+      "parameters": {
+        "dataTableId": {
+          "__rl": true,
+          "value": "KhNXu30ELKFAnv6k",
+          "mode": "list",
+          "cachedResultName": "SOC-Alert-Activity-Table",
+          "cachedResultUrl": "/projects/04kLsh8wTSUwZTmc/datatables/KhNXu30ELKFAnv6k"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "activity_id": "={{ \"ACT-\" + Date.now() }}",
+            "alert_id": "={{ $('Parse Slack Payload').item.json.alert_id }}",
+            "analyst": "Analyst L1",
+            "action": "contained",
+            "note": "={{ 'Analyst L1 isolated ' + $('Parse Slack Payload').item.json.host + ' from Slack via LimaCharlie' }}",
+            "timestamp": "={{ $now.toISO() }}",
+            "summary": "={{ 'Analyst L1 isolated ' + $('Parse Slack Payload').item.json.host + ' from Slack via LimaCharlie' }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "activity_id",
+              "displayName": "activity_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "alert_id",
+              "displayName": "alert_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "analyst",
+              "displayName": "analyst",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "action",
+              "displayName": "action",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "note",
+              "displayName": "note",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "timestamp",
+              "displayName": "timestamp",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "summary",
+              "displayName": "summary",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        2016,
+        -400
+      ],
+      "id": "25e8c50d-d7c0-4d21-9618-dd96e8dd7cbf",
+      "name": "Log Containment Activity"
+    },
+    {
+      "parameters": {
+        "dataTableId": {
+          "__rl": true,
+          "value": "KhNXu30ELKFAnv6k",
+          "mode": "list",
+          "cachedResultName": "SOC-Alert-Activity-Table",
+          "cachedResultUrl": "/projects/04kLsh8wTSUwZTmc/datatables/KhNXu30ELKFAnv6k"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "action": "investigating",
+            "note": "={{ 'Analyst L1 unisolated ' + $('Parse Slack Payload').item.json.host + ' from Slack via LimaCharlie' }}",
+            "summary": "={{ 'Analyst L1 unisolated ' + $('Parse Slack Payload').item.json.host + ' from Slack via LimaCharlie' }}",
+            "timestamp": "={{ $now.toISO() }}",
+            "analyst": "Analyst L1",
+            "alert_id": "={{ $('Parse Slack Payload').item.json.alert_id }}",
+            "activity_id": "={{ \"ACT-\" + Date.now() }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "activity_id",
+              "displayName": "activity_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "alert_id",
+              "displayName": "alert_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "analyst",
+              "displayName": "analyst",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "action",
+              "displayName": "action",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "note",
+              "displayName": "note",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "timestamp",
+              "displayName": "timestamp",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "summary",
+              "displayName": "summary",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        2016,
+        -208
+      ],
+      "id": "fed815de-376d-47a9-bc81-71ea21b96f29",
+      "name": "Log Unisolation Activity"
+    },
+    {
+      "parameters": {
+        "respondWith": "allIncomingItems",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        672,
+        -112
+      ],
+      "id": "a8ed8e4c-5960-40e5-b137-e7d4f6d645a2",
+      "name": "Reject Unknown Action"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "{ \"text\": \"⏳ Isolation in progress...\" }",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        672,
+        -304
+      ],
+      "id": "0dcfeeec-c1a4-4528-a979-3cbe4d964330",
+      "name": "Ack Slack (200)"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Parse Slack Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Slack Payload": {
+      "main": [
+        [
+          {
+            "node": "Is Isolate Action?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Isolate Action?": {
+      "main": [
+        [
+          {
+            "node": "Ack Slack (200)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Reject Unknown Action",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Isolate Host": {
+      "main": [
+        [
+          {
+            "node": "Update Alert - Contained",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Alert - Contained": {
+      "main": [
+        [
+          {
+            "node": "Log Containment Activity",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Slack - Update Message": {
+      "main": [
+        [
+          {
+            "node": "Slack - Isolation Confirmed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get JWT": {
+      "main": [
+        [
+          {
+            "node": "Isolate Host",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Isolate or Unisolate?": {
+      "main": [
+        [
+          {
+            "node": "Fetch Alert Details",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Fetch Alert Details (Unisolated)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Unisolate Host": {
+      "main": [
+        [
+          {
+            "node": "Update Alert - Unisolated",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Alert - Unisolated": {
+      "main": [
+        [
+          {
+            "node": "Log Unisolation Activity",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get JWT1": {
+      "main": [
+        [
+          {
+            "node": "Unisolate Host",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Slack - Update Unisolation Message": {
+      "main": [
+        [
+          {
+            "node": "Slack - Unisolation Confirmed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Alert Details": {
+      "main": [
+        [
+          {
+            "node": "Get JWT",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Alert Details (Unisolated)": {
+      "main": [
+        [
+          {
+            "node": "Get JWT1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log Containment Activity": {
+      "main": [
+        [
+          {
+            "node": "Slack - Update Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log Unisolation Activity": {
+      "main": [
+        [
+          {
+            "node": "Slack - Update Unisolation Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ack Slack (200)": {
+      "main": [
+        [
+          {
+            "node": "Is Isolate or Unisolate?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "db26646a-8ad0-46c6-aba1-de4d38957cb2",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "bca3700e16e54a7132990b7f31f29e20a15f257a855b01e6e47799d906f6456f"
+  },
+  "id": "CzSg2Bcs6upohzGl",
+  "tags": []
+}

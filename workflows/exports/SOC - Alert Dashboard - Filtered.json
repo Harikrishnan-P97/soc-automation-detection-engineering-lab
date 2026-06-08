@@ -1,0 +1,172 @@
+{
+  "name": "SOC - Alert Dashboard - Filtered",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "soc-alert-dashboard-filtered",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -528,
+        0
+      ],
+      "id": "2029d33a-7982-48bd-a5cb-6953d4e179b2",
+      "name": "Webhook",
+      "webhookId": "06c373fc-ba61-44b4-bf55-a5acaeb7619b"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "value": "oDfEbugU7spN85wj",
+          "mode": "list",
+          "cachedResultName": "SOC-Alert-Dashboard-Table",
+          "cachedResultUrl": "/projects/04kLsh8wTSUwZTmc/datatables/oDfEbugU7spN85wj"
+        }
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        -304,
+        0
+      ],
+      "id": "88d16c79-9ea2-407c-bed3-ef74f6b405b0",
+      "name": "Fetch All Alerts",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "91ca2b8b-a28f-4bbd-9fe9-9502082ea922",
+              "leftValue": "={{$item(0).$node[\"Webhook\"].json.query.status || \"all\"}}",
+              "rightValue": "all",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            },
+            {
+              "id": "680329a3-a230-4a71-9ff7-5b1afae54ed6",
+              "leftValue": "={{$json.status}}",
+              "rightValue": "={{$item(0).$node[\"Webhook\"].json.query.status}}",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "or"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.3,
+      "position": [
+        -80,
+        0
+      ],
+      "id": "8759ca2b-dc92-4549-bbad-a41e51ebd1cc",
+      "name": "Filter by Status"
+    },
+    {
+      "parameters": {
+        "jsCode": "return items.map(item => {\n\n  const status = item.json.status;\n  let actions;\n\n  if (status === \"open\") {\n    actions = \"Investigate | Escalate | Close | False Positive\";\n  } \n  else if (status === \"investigating\") {\n    actions = \"Escalate | Close | False Positive\";\n  }\n    else if (status === \"contained\") {\n  actions = \"Unisolate\";\n  }\n  else if (status === \"escalated\") {\n    actions = \"Escalated\";\n  }\n  else if (status === \"closed\") {\n    actions = \"Resolved\";\n  }\n  else if (status === \"false_positive\") {\n    actions = \"False Positive\";\n  }\n\n  item.json.actions = actions;\n\n  return item;\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        128,
+        0
+      ],
+      "id": "dbb13c07-7094-48dc-a15d-0e02ae17bd87",
+      "name": "Append Actions Column"
+    },
+    {
+      "parameters": {
+        "respondWith": "allIncomingItems",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        352,
+        0
+      ],
+      "id": "c0b49f86-d691-4acc-97bb-f85231896ba4",
+      "name": "Return Filtered Alerts"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Fetch All Alerts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch All Alerts": {
+      "main": [
+        [
+          {
+            "node": "Filter by Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter by Status": {
+      "main": [
+        [
+          {
+            "node": "Append Actions Column",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append Actions Column": {
+      "main": [
+        [
+          {
+            "node": "Return Filtered Alerts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "082e1ce6-ae56-405c-9111-44ab87005a3a",
+  "meta": {
+    "instanceId": "bca3700e16e54a7132990b7f31f29e20a15f257a855b01e6e47799d906f6456f"
+  },
+  "id": "K14JJDfoXwJCBXLE",
+  "tags": []
+}

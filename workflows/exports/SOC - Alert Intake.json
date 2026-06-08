@@ -1,0 +1,1325 @@
+{
+  "name": "SOC - Alert Intake",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "soc-intake-alerts",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -224,
+        -1088
+      ],
+      "id": "245ad55f-0641-437a-acff-a7544230592c",
+      "name": "Webhook",
+      "webhookId": "f1d4a403-a785-4ebf-9518-6019a8b33852"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "5c9d15db-6723-4f08-a96f-6c9954b1c8a4",
+              "name": "rule_name",
+              "value": "={{ $json.result?.alert_name || \"Unknown Alert\" }}",
+              "type": "string"
+            },
+            {
+              "id": "2e2881ce-37fc-4474-8f07-14f34163dd7d",
+              "name": "severity",
+              "value": "={{\n  [\"low\",\"medium\",\"high\",\"critical\"].includes(\n    String($json.result?.severity).toLowerCase()\n  )\n    ? String($json.result?.severity).toLowerCase()\n    : \"medium\"\n}}",
+              "type": "string"
+            },
+            {
+              "id": "c8e05169-354f-4e63-8e57-80dc75a3432d",
+              "name": "host",
+              "value": "={{ $json.result?.dest_host || \"unknown-host\" }}",
+              "type": "string"
+            },
+            {
+              "id": "75f54a1d-c99b-4dce-9754-0701520d6c71",
+              "name": "user",
+              "value": "={{ $json.result?.user || \"unknown-user\" }}",
+              "type": "string"
+            },
+            {
+              "id": "312613a0-ba7c-4fda-aa9a-6ca8b8d8835a",
+              "name": "source",
+              "value": "={{ $json.result?.source || \"splunk\" }}",
+              "type": "string"
+            },
+            {
+              "id": "4a70e41b-47d7-418d-9c5e-7044a6a04e2f",
+              "name": "status",
+              "value": "open",
+              "type": "string"
+            },
+            {
+              "id": "66dd7344-d5bb-4497-aaf6-8cc7de7bc369",
+              "name": "alert_name",
+              "value": "={{ $json.result?.alert_name || \"Splunk Alert\" }}",
+              "type": "string"
+            },
+            {
+              "id": "d21bd4d2-ec2d-40fc-a65a-c8ded064f890",
+              "name": "event_time",
+              "value": "={{\n  $json.result?._time\n    ? (isNaN($json.result._time)\n        ? new Date($json.result._time).toISOString()\n        : new Date(parseFloat($json.result._time) * 1000).toISOString()\n      )\n    : $now.toISO()\n}}",
+              "type": "string"
+            },
+            {
+              "id": "47c7db07-db12-4734-abe6-81570de6bb13",
+              "name": "src_ip",
+              "value": "={{ $json.result?.src_ip || \"\" }}",
+              "type": "string"
+            },
+            {
+              "id": "41b13da6-49c7-4ec4-92fb-e4ceff3b1297",
+              "name": "destination",
+              "value": "={{ $json.result?.dest_host || \"unknown-host\" }}",
+              "type": "string"
+            },
+            {
+              "id": "99cfbefc-8f25-45d3-8062-16a13e47c89e",
+              "name": "dest_ip",
+              "value": "={{\n  $json.result?.dest_ip || \"\"\n}}",
+              "type": "string"
+            },
+            {
+              "id": "40c9275a-5dc1-4af2-b2bc-fc5874a2bb8c",
+              "name": "event_source",
+              "value": "={{ $json.result?.event_source || \"unknown\" }}",
+              "type": "string"
+            },
+            {
+              "id": "e2c45e28-c66a-42af-8018-6c4002e10f71",
+              "name": "index_name",
+              "value": "={{ $json.result?.index_name || \"unknown\" }}",
+              "type": "string"
+            },
+            {
+              "id": "2669bd67-f816-42d9-a72e-355028369842",
+              "name": "alert_type",
+              "value": "={{\n  $json.result?.alert_type ||\n  ($json.result?.index_name === \"waf\" ? \"web\" :\n   $json.result?.index_name === \"pc1\" ? \"endpoint\" :\n   \"unknown\")\n}}",
+              "type": "string"
+            },
+            {
+              "id": "dc24e28b-14e7-4914-8334-aa711fc1afc7",
+              "name": "raw_event",
+              "value": "={{ JSON.stringify($json.result, null, 2) }}",
+              "type": "string"
+            },
+            {
+              "id": "7a0b6a85-40c1-409e-b1e6-4d142816e763",
+              "name": "splunk_link",
+              "value": "={{ \n(() => {\n  const base = \"http://192.168.56.1:8000\";\n\n  const index = $json.result?.index_name || \"pc1\";\n  const alert_name = $json.result?.alert_name || \"\";\n\n  const host = $json.result?.dest_host || $json.result?.ComputerName || \"\";\n  const src_ip = $json.result?.src_ip || \"\";\n  const dest_ip = $json.result?.dest_ip || \"\";\n\n  const filename = $json.result?.filename || \"\";\n  let file_path = $json.result?.file_created || \"\";\n\n  const process = $json.result?.process || $json.result?.process_name || \"\";\n  const commandLine = $json.result?.CommandLine || \"\";\n\n  const transaction_id = $json.result?.transaction_id || \"\";\n\n  const event_id = String($json.result?.event_id || \"\");\n  const user = $json.result?.user || \"\";\n  const logon_type = $json.result?.logon_type || \"\";\n\n  const parent_process = $json.result?.parent_process_name || \"\";\n  const child_process = $json.result?.process_name || \"\";\n\n  const src_port = $json.result?.SourcePort || \"\";\n  const dest_port = $json.result?.DestinationPort || \"\";\n\n  if (file_path) {\n    file_path = file_path.replace(/\\\\/g, \"\\\\\\\\\");\n  }\n\n  let epoch = $json.result?._time\n    ? Math.floor(parseFloat($json.result._time))\n    : Math.floor(Date.now() / 1000);\n\n  const earliest = epoch - 600;\n  const latest = epoch + 120;\n\n  let filter = \"\";\n\n  // =========================\n  // ✅ WAF LOGIC\n  // =========================\n  if (index === \"waf\") {\n\n    if (transaction_id) {\n      filter = `sourcetype=modsecurity:json transaction.transaction_id=\"${transaction_id}\"`;\n    } else if (src_ip) {\n      filter = `sourcetype=modsecurity:json transaction.remote_address=\"${src_ip}\"`;\n    } else {\n      filter = `sourcetype=modsecurity:json`;\n    }\n\n  // =========================\n  // 🔥 BRUTE FORCE ALERT\n  // =========================\n  } else if (alert_name.includes(\"Brute Force\")) {\n\n    const win = `sourcetype=WinEventLog`;\n    let conditions = [`EventCode=4625`];\n\n    if (host) conditions.push(`host=\"${host}\"`);\n\n    if (user) {\n      conditions.push(`(Account_Name=\"*${user}*\" OR TargetUserName=\"*${user}*\")`);\n    }\n\n    if (src_ip) conditions.push(`Source_Network_Address=\"${src_ip}\"`);\n    if (logon_type) conditions.push(`Logon_Type=\"${logon_type}\"`);\n\n    filter = `${win} ${conditions.join(\" \")}`;\n\n  // =========================\n  // 🔥 SUSPICIOUS POWERSHELL FLAGS\n  // =========================\n  } else if (alert_name.includes(\"PowerShell Flags\")) {\n\n    const sysmon = `sourcetype=WinEventLog LogName=\"Microsoft-Windows-Sysmon/Operational\"`;\n    let conditions = [`EventCode=1`, `Image=\"*powershell.exe*\"`];\n\n    if (host) conditions.push(`host=\"${host}\"`);\n    if (user) conditions.push(`User=\"*${user}*\"`);\n\n    if (commandLine) {\n      const cmd = commandLine.toLowerCase();\n      let flagConditions = [];\n\n      if (cmd.includes(\"-enc\")) flagConditions.push('CommandLine=\"*-enc*\"');\n      if (cmd.includes(\"-nop\")) flagConditions.push('CommandLine=\"*-nop*\"');\n      if (cmd.includes(\"-w hidden\") || cmd.includes(\"-windowstyle hidden\")) {\n        flagConditions.push('CommandLine=\"*hidden*\"');\n      }\n      if (cmd.includes(\"-ep bypass\") || cmd.includes(\"-executionpolicy bypass\")) {\n        flagConditions.push('CommandLine=\"*bypass*\"');\n      }\n      if (cmd.includes(\"-noni\")) flagConditions.push('CommandLine=\"*-noni*\"');\n\n      if (flagConditions.length > 0) {\n        conditions.push(`(${flagConditions.join(\" OR \")})`);\n      }\n    }\n\n    filter = `${sysmon} ${conditions.join(\" \")}`;\n\n  // =========================\n  // 🔥 SUSPICIOUS PARENT-CHILD PROCESS\n  // =========================\n  } else if (alert_name.includes(\"Parent-Child\")) {\n\n    const sysmon = `sourcetype=WinEventLog LogName=\"Microsoft-Windows-Sysmon/Operational\"`;\n    let conditions = [`EventCode=1`];\n\n    if (host) conditions.push(`host=\"${host}\"`);\n    if (user) conditions.push(`User=\"*${user}*\"`);\n\n    if (parent_process) {\n      const parentExe = parent_process.split(\"\\\\\").pop();\n      conditions.push(`ParentImage=\"*${parentExe}*\"`);\n    }\n\n    if (child_process) {\n      const childExe = child_process.split(\"\\\\\").pop();\n      conditions.push(`Image=\"*${childExe}*\"`);\n    }\n\n    filter = `${sysmon} ${conditions.join(\" \")}`;\n\n  // =========================\n  // 🔥 NETWORK CONNECTION FROM SUSPICIOUS PROCESS\n  // =========================\n  } else if (alert_name.includes(\"Suspicious Process\") && alert_name.includes(\"Network\")) {\n\n    const sysmon = `sourcetype=WinEventLog LogName=\"Microsoft-Windows-Sysmon/Operational\"`;\n    let conditions = [`EventCode=3`];\n\n    if (host) conditions.push(`host=\"${host}\"`);\n    if (user) conditions.push(`User=\"*${user}*\"`);\n\n    if (dest_ip) conditions.push(`DestinationIp=\"${dest_ip}\"`);\n    if (dest_port) conditions.push(`DestinationPort=\"${dest_port}\"`);\n\n    if (process) {\n      const procName = process.split(\"\\\\\").pop();\n      conditions.push(`Image=\"*${procName}*\"`);\n    }\n\n    filter = `${sysmon} ${conditions.join(\" \")}`;\n\n  // =========================\n  // 🔥 CREDENTIAL DUMPING TOOL EXECUTION\n  // =========================\n  } else if (alert_name.includes(\"Credential Dumping\")) {\n\n    const sysmon = `sourcetype=WinEventLog LogName=\"Microsoft-Windows-Sysmon/Operational\"`;\n    let conditions = [`EventCode=1`];\n\n    if (host) conditions.push(`host=\"${host}\"`);\n    if (user) conditions.push(`User=\"*${user}*\"`);\n\n    if (process) {\n      const procName = process.split(\"\\\\\").pop();\n      conditions.push(`Image=\"*${procName}*\"`);\n    }\n\n    if (commandLine) {\n      const cmd = commandLine.toLowerCase();\n      let cmdConditions = [];\n\n      if (cmd.includes(\"sekurlsa\")) {\n        cmdConditions.push(`CommandLine=\"*sekurlsa*\"`);\n      }\n\n      if (cmd.includes(\"logonpasswords\")) {\n        cmdConditions.push(`CommandLine=\"*logonpasswords*\"`);\n      }\n\n      if (cmdConditions.length > 0) {\n        conditions.push(`(${cmdConditions.join(\" OR \")})`);\n      }\n    }\n\n    if (parent_process) {\n      const parentExe = parent_process.split(\"\\\\\").pop();\n      conditions.push(`ParentImage=\"*${parentExe}*\"`);\n    }\n\n    filter = `${sysmon} ${conditions.join(\" \")}`;\n\n  // =========================\n  // ✅ WINDOWS EVENT LOGS\n  // =========================\n  } else if ([\"4624\", \"4625\"].includes(event_id)) {\n\n    const win = `sourcetype=WinEventLog`;\n    let baseFilter = `${win} EventCode=${event_id}`;\n\n    if (host) baseFilter += ` host=\"${host}\"`;\n\n    if (user) {\n      baseFilter += ` (Account_Name=\"*${user}*\" OR TargetUserName=\"*${user}*\")`;\n    }\n\n    filter = baseFilter;\n\n  // =========================\n  // ✅ SYSMON LOGIC\n  // =========================\n  } else {\n\n    const sysmon = `sourcetype=WinEventLog LogName=\"Microsoft-Windows-Sysmon/Operational\"`;\n\n    // 🔴 File Creation\n    if (alert_name.includes(\"File Creation\") || alert_name.includes(\"Archive\")) {\n\n      const baseFilter = `${sysmon} EventCode=11`;\n\n      if (file_path) {\n        filter = `${baseFilter} TargetFilename=\"${file_path}\"`;\n      } else if (filename) {\n        filter = `${baseFilter} TargetFilename=\"*${filename}\"`;\n      } else {\n        filter = `${baseFilter} host=\"${host}\"`;\n      }\n\n    // 🟡 Process Execution (GENERIC FALLBACK)\n    } else if (\n      alert_name.includes(\"Process Execution\") ||\n      alert_name.includes(\"Recon\") ||\n      alert_name.includes(\"Tool\")\n    ) {\n\n      const baseFilter = `${sysmon} EventCode=1`;\n      const normalizedCmd = commandLine.toLowerCase();\n\n      if (alert_name.includes(\"Recon\") && normalizedCmd) {\n\n        const commands = normalizedCmd\n          .split(\"|\")\n          .map(cmd => cmd.trim())\n          .filter(cmd => cmd.length > 0)\n          .map(cmd => {\n            cmd = cmd.replace(/\"/g, \"\");\n            let exe = cmd.split(\"\\\\\").pop();\n            exe = exe.split(\" \")[0];\n            return exe;\n          });\n\n        const uniqueCommands = [...new Set(commands)];\n\n        const orConditions = uniqueCommands\n          .map(cmd => `Image=\"*${cmd}*\"`)\n          .join(\" OR \");\n\n        filter = `${baseFilter} (${orConditions})`;\n\n      } else if (process) {\n        const procName = process.split(\"\\\\\").pop();\n        let conditions = [`Image=\"*${procName}*\"`];\n\n        if (user) conditions.push(`User=\"*${user}*\"`);\n\n        filter = `${baseFilter} ${conditions.join(\" \")}`;\n\n      } else if (normalizedCmd) {\n        const safeCmd = normalizedCmd.replace(/\"/g, '').substring(0, 50);\n        filter = `${baseFilter} CommandLine=\"*${safeCmd}*\"`;\n\n      } else {\n        filter = `${baseFilter} host=\"${host}\"`;\n      }\n\n    // 🔵 Network / Exfil (GENERIC FALLBACK)\n    } else if (\n      alert_name.includes(\"Outbound\") ||\n      alert_name.includes(\"Exfil\")\n    ) {\n\n      const baseFilter = `${sysmon} EventCode=3`;\n      let conditions = [];\n\n      if (dest_ip) conditions.push(`DestinationIp=\"${dest_ip}\"`);\n\n      if (process) {\n        const procName = process.split(\"\\\\\").pop();\n        conditions.push(`Image=\"*${procName}*\"`);\n      }\n\n      if (user) conditions.push(`User=\"*${user}*\"`);\n\n      if (conditions.length > 0) {\n        filter = `${baseFilter} ${conditions.join(\" \")}`;\n      } else if (host) {\n        filter = `${baseFilter} host=\"${host}\"`;\n      } else {\n        filter = `${baseFilter}`;\n      }\n\n    } else {\n      filter = `${sysmon} host=\"${host}\"`;\n    }\n  }\n\n  const query = `search index=${index} ${filter}`;\n  return `${base}/en-US/app/search/search?q=${query}&earliest=${earliest}&latest=${latest}`;\n})()\n}}",
+              "type": "string"
+            },
+            {
+              "id": "e001141d-84b2-4595-9a5e-871fa31696fe",
+              "name": "event_id",
+              "value": "={{ $json.result?.event_id || \"\" }}",
+              "type": "string"
+            },
+            {
+              "id": "2cefbf0a-df2e-40b3-acbb-5017c861d298",
+              "name": "logon_type",
+              "value": "={{ $json.result?.logon_type || \"\" }}",
+              "type": "string"
+            },
+            {
+              "id": "a0e025b3-b056-407f-a406-d03aa4df865b",
+              "name": "risk_score",
+              "value": "={{ Number($json.result?.risk_score) || 0 }}",
+              "type": "number"
+            },
+            {
+              "id": "4fd2ee1b-b8fc-4887-a2b2-645ec3f66e18",
+              "name": "asset_type",
+              "value": "={{\n  $json.result?.asset_type ||\n  ($json.result?.index_name === \"waf\" ? \"webapp\" :\n   $json.result?.index_name === \"pc1\" ? \"endpoint\" :\n   \"unknown\")\n}}",
+              "type": "string"
+            },
+            {
+              "id": "b3299523-abcd-4cc4-bf66-b17b94c914c8",
+              "name": "environment",
+              "value": "={{ $json.result?.environment || \"SOC lab\" }}",
+              "type": "string"
+            },
+            {
+              "id": "8ad0c3be-24f4-4051-a8c2-e73cda4b01e7",
+              "name": "mitre_tactic",
+              "value": "={{ $json.result?.mitre_tactic || \"Unknown\" }}",
+              "type": "string"
+            },
+            {
+              "id": "23d96bdd-9cdb-454e-9b56-b5e7987ba499",
+              "name": "mitre_technique",
+              "value": "={{ $json.result?.mitre_technique || \"Unknown\" }}",
+              "type": "string"
+            },
+            {
+              "id": "30ff2fa7-0d1a-400f-a747-16ffc09103f4",
+              "name": "attempts",
+              "value": "={{ Number($json.result?.count) || 1 }}",
+              "type": "number"
+            },
+            {
+              "id": "0f58c590-cb85-4f6f-818c-4365b5f91817",
+              "name": "suspicious_flag",
+              "value": "={{ $json.result?.suspicious_flag || \"\" }}",
+              "type": "string"
+            },
+            {
+              "id": "6deb1281-e62f-4b53-814a-825091ceb366",
+              "name": "CommandLine",
+              "value": "={{ $json.result?.CommandLine || \"\" }}",
+              "type": "string"
+            },
+            {
+              "id": "d4b17aba-dc65-4632-ad03-77db7d9c84fb",
+              "name": "parent_process",
+              "value": "={{ $json.result?.ParentImage || $json.result?.parent_process || \"\" }}",
+              "type": "string"
+            },
+            {
+              "id": "d3f0630e-35c2-42fb-89a6-5138d76ddcbf",
+              "name": "process_name",
+              "value": "={{ $json.result?.process_name || \"\" }}",
+              "type": "string"
+            },
+            {
+              "id": "e756d370-9ba7-4c31-a71a-7fbf81cb8a4c",
+              "name": "suspicious_process",
+              "value": "={{ $json.result?.suspicious_process || \"\" }}",
+              "type": "string"
+            },
+            {
+              "id": "4ce87697-75fc-4fed-99bb-dc77e53a7531",
+              "name": "dest_port",
+              "value": "={{ $json.result?.DestinationPort || \"\" }}",
+              "type": "string"
+            },
+            {
+              "id": "8624ad7e-56c9-459a-b018-ae0c6a12a1ae",
+              "name": "process_path",
+              "value": "={{ $json.result?.process_path || \"\" }}",
+              "type": "string"
+            },
+            {
+              "id": "987e2593-ddb1-4916-aa6c-a6834c8f6966",
+              "name": "http_method",
+              "value": "={{ $json.result?.http_method || \"\" }}",
+              "type": "string"
+            },
+            {
+              "id": "58e9041a-54b5-452a-92ec-032d3816fc99",
+              "name": "status_code",
+              "value": "={{ $json.result?.status_code || \"\" }}",
+              "type": "string"
+            },
+            {
+              "id": "6f1bf2e3-f35e-4dec-8790-d787e945dedb",
+              "name": "uri",
+              "value": "={{ $json.result?.clean_uri || \"\" }}",
+              "type": "string"
+            },
+            {
+              "id": "eb14fcfd-af80-41ae-9886-799c3c4dba7a",
+              "name": "user_agent",
+              "value": "={{ $json.result?.user_agent || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "a2bc351c-aba1-41f3-aa7b-a78dd58c7892",
+              "name": "transaction_id",
+              "value": "={{ $json.result?.transaction_id || \"\" }}",
+              "type": "string"
+            },
+            {
+              "id": "fbdf303b-12c6-43b2-ac4e-7e742f6f0b86",
+              "name": "filename",
+              "value": "={{ $json.result?.filename || \"\" }}",
+              "type": "string"
+            },
+            {
+              "id": "f813a56a-2f1e-4961-86ae-e73ed6adb762",
+              "name": "file_hash",
+              "value": "={{$json.result?.file_hash || ''}}",
+              "type": "string"
+            },
+            {
+              "id": "787ab002-6035-4989-a94d-fd08bf720334",
+              "name": "vt_score",
+              "value": 0,
+              "type": "number"
+            },
+            {
+              "id": "a4a4a83c-6076-4de2-b196-802c7bebdf21",
+              "name": "vt_label",
+              "value": "unknown",
+              "type": "string"
+            },
+            {
+              "id": "f0d01acd-6b4c-49e8-9cb3-c03d5f72697a",
+              "name": "file_name",
+              "value": "",
+              "type": "string"
+            },
+            {
+              "id": "439a421e-4fd4-402d-aacb-f4d471c2da00",
+              "name": "is_new_alert",
+              "value": true,
+              "type": "boolean"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        224,
+        -1088
+      ],
+      "id": "a10064b0-e0ef-4ef8-8e62-f6558e726c71",
+      "name": "Normalize Alert"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        2784,
+        -1088
+      ],
+      "id": "40734cf7-4fb4-4b09-87da-8f2e21dc567a",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "e71dedf8-b477-4dee-b970-3909e41e0fae",
+              "name": "result",
+              "value": "={{ $json.body.result }}",
+              "type": "object"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        0,
+        -1088
+      ],
+      "id": "5ca3d758-5d46-46b2-a1b9-a2bd5728d9f7",
+      "name": "Extract Result"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "6e62e300-fcd9-4ed4-b5b9-465da35a6169",
+              "leftValue": "={{ $json.file_hash }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        480,
+        -1232
+      ],
+      "id": "e68b6fd8-2a34-4cef-9526-beeded9e4470",
+      "name": "Has File Hash?"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://n8n.vm.local/webhook/vt-enrichment-api",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "file_hash",
+              "value": "={{ $json.file_hash }}"
+            }
+          ]
+        },
+        "options": {
+          "allowUnauthorizedCerts": true
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        704,
+        -1392
+      ],
+      "id": "f45afb2c-ded8-4632-9812-dd388fe29af8",
+      "name": "VT Enrichment API",
+      "alwaysOutputData": false,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const original = $item(0).$node[\"Normalize Alert\"].json;\nconst vt = $json;\n\n// If VT failed or empty\nif (!vt || Object.keys(vt).length === 0 || vt.vt_score === undefined) {\n  return [\n    {\n      json: {\n        ...original,\n        vt_score: 0,\n        vt_label: \"unavailable\",\n        file_name: \"\"\n      }\n    }\n  ];\n}\n\n// If VT success\nreturn [\n  {\n    json: {\n      ...original,\n      vt_score: vt.vt_score || 0,\n      vt_label: vt.vt_label || \"unknown\",\n      file_name: vt.file_name || \"\",\n      severity: vt.verdict === \"malicious\"\n        ? \"critical\"\n        : original.severity,\n      risk_score: vt.verdict === \"malicious\"\n        ? Math.min(original.risk_score + 50, 100)\n        : original.risk_score\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        912,
+        -1392
+      ],
+      "id": "a50af54e-6abc-446e-8549-bb860bc94ac2",
+      "name": "Apply VT Enrichment"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "0efcc2cc-926b-4593-9b1a-2004f6023033",
+              "leftValue": "={{$json.severity}}",
+              "rightValue": "critical",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            },
+            {
+              "id": "b872ffc7-707c-4a65-9e44-3c2d46a8b2ea",
+              "leftValue": "={{$json.risk_score}}",
+              "rightValue": 80,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ],
+          "combinator": "or"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        2064,
+        -1104
+      ],
+      "id": "725c7aa7-d4b4-42fd-900f-bedae315dd42",
+      "name": "Critical ?"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        1168,
+        -1104
+      ],
+      "id": "1cc99c16-eee8-4e3d-9b45-3c3a08b36367",
+      "name": "Alert + VT Enrichment"
+    },
+    {
+      "parameters": {
+        "jsCode": "const alert = $item(0).$node[\"Alert + VT Enrichment\"].json;\nlet socId = $json?.soc_id;\n\n// 🚨 Fallback if SOC ID generator fails\nif (!socId || socId === \"\" || socId === null) {\n  socId = \"SOC-TEMP-\" + Date.now();\n\n  // Optional: mark it for tracking\n  alert.soc_id_fallback = true;\n}\n\nreturn [\n  {\n    json: {\n      ...alert,\n      alert_id: socId\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1616,
+        -1104
+      ],
+      "id": "e92ce38c-c717-4bc3-b002-d5e7acd7a969",
+      "name": "Attach SOC ID"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://n8n.vm.local/webhook/generate-soc-id",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\n  \"source\": \"soc-intake\"\n}",
+        "options": {
+          "allowUnauthorizedCerts": true,
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1392,
+        -1104
+      ],
+      "id": "d2ae74e2-77ea-4c77-8913-76f3fdce72ec",
+      "name": "Generate SOC ID",
+      "alwaysOutputData": true,
+      "executeOnce": true
+    },
+    {
+      "parameters": {
+        "dataTableId": {
+          "__rl": true,
+          "value": "oDfEbugU7spN85wj",
+          "mode": "list",
+          "cachedResultName": "SOC-Alert-Dashboard-Table",
+          "cachedResultUrl": "/projects/04kLsh8wTSUwZTmc/datatables/oDfEbugU7spN85wj"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "alert_id": "={{ $json.alert_id }}",
+            "alert_name": "={{ $json.alert_name }}",
+            "source": "={{ $json.source }}",
+            "severity": "={{ $json.severity }}",
+            "host": "={{ $json.host }}",
+            "user": "={{ $json.user }}",
+            "status": "={{ $json.status }}",
+            "analyst": "Unassigned",
+            "splunk_link": "={{ $json.splunk_link }}",
+            "created_at": "={{$now.toISO()}}",
+            "updated_at": "={{$now.toISO()}}",
+            "timestamp": "={{ $json.event_time }}",
+            "mitre_tactic": "={{ $json.mitre_tactic }}",
+            "mitre_technique": "={{ $json.mitre_technique }}",
+            "rule_name": "={{ $json.rule_name }}",
+            "description": "={{ \n'🚨 [' + $json.severity.toUpperCase() + '] ' +\n$json.alert_name +\n\n($json.user \n  ? ' | User: ' + $json.user \n  : '') +\n\n($json.attempts > 1 \n  ? ' | Attempts: ' + $json.attempts \n  : '') +\n\n($json.filename \n  ? ' | File: ' + $json.filename \n  : '') +\n\n($json.file_name \n  ? ' | Sample: ' + $json.file_name \n  : '') +\n\n($json.vt_score > 0 \n  ? ' | VT: ' + $json.vt_score + '/100' \n  : '') +\n\n($json.vt_label && $json.vt_label !== 'unknown'\n  ? ' | Threat: ' + $json.vt_label \n  : '') +\n\n($json.suspicious_flag \n  ? ' | Flag: ' + $json.suspicious_flag \n  : '') +\n\n($json.suspicious_process \n  ? ' | Process: ' + $json.suspicious_process \n  : '') +\n\n($json.parent_process\n  ? ' | Parent: ' + $json.parent_process \n  : '') +\n\n($json.process_path\n  ? ' | Path: ' + $json.process_path \n  : '') +\n\n($json.CommandLine \n  ? ' | Cmd: ' + $json.CommandLine.substring(0, 80) + '...' \n  : '') +\n\n($json.host \n  ? ' | Host: ' + $json.host \n  : '') +\n\n($json.src_ip && $json.src_ip !== \"0.0.0.0\"\n  ? ' | Src IP: ' + $json.src_ip \n  : '') +\n\n($json.dest_ip \n  ? ' | Dest: ' + $json.dest_ip + \n    ($json.dest_port ? ':' + $json.dest_port : '') \n  : '') +\n\n($json.http_method \n  ? ' | Method: ' + $json.http_method \n  : '') +\n\n($json.uri \n  ? ' | URI: ' + $json.uri \n  : '') +\n\n($json.status_code \n  ? ' | Status: ' + $json.status_code \n  : '') +\n\n' | ' + $json.mitre_tactic +\n' (' + $json.mitre_technique + ')'\n}}",
+            "event_time": "={{ $json.event_time }}",
+            "notes": "={{ \n  '[OPEN] Alert created by Splunk at ' + $now.toISO() + \n  ' | User: ' + $json.user + \n  ' | Host: ' + $json.host \n}}",
+            "src_ip": "={{ $json.src_ip }}",
+            "dest_ip": "={{ $json.dest_ip }}",
+            "event_source": "={{ $json.event_source }}",
+            "index_name": "={{ $json.index_name }}",
+            "raw_event": "={{ $json.raw_event }}",
+            "alert_type": "={{ $json.alert_type }}",
+            "event_id": "={{ $json.event_id }}",
+            "logon_type": "={{ $json.logon_type }}",
+            "risk_score": "={{ $json.risk_score }}",
+            "asset_type": "={{ $json.asset_type }}",
+            "environment": "={{ $json.environment }}",
+            "attempts": "={{ $json.attempts }}",
+            "suspicious_flag": "={{ $json.suspicious_flag }}",
+            "CommandLine": "={{ $json.CommandLine }}",
+            "parent_process": "={{ $json.parent_process }}",
+            "process_name": "={{ $json.process_name }}",
+            "suspicious_process": "={{ $json.suspicious_process }}",
+            "dest_port": "={{ $json.dest_port }}",
+            "http_method": "={{ $json.http_method }}",
+            "status_code": "={{ $json.status_code }}",
+            "user_agent": "={{ $json.user_agent }}",
+            "uri": "={{ $json.uri }}",
+            "transaction_id": "={{ $json.transaction_id }}",
+            "file_hash": "={{ $json.file_hash }}",
+            "vt_score": "={{ $json.vt_score }}",
+            "vt_label": "={{ $json.vt_label }}",
+            "file_name": "={{ $json.file_name }}",
+            "soc_id_fallback": "={{ $json.soc_id_fallback || false }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "alert_id",
+              "displayName": "alert_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "timestamp",
+              "displayName": "timestamp",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "severity",
+              "displayName": "severity",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "alert_name",
+              "displayName": "alert_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "rule_name",
+              "displayName": "rule_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "host",
+              "displayName": "host",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "user",
+              "displayName": "user",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "source",
+              "displayName": "source",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "mitre_tactic",
+              "displayName": "mitre_tactic",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "mitre_technique",
+              "displayName": "mitre_technique",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "analyst",
+              "displayName": "analyst",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "event_source",
+              "displayName": "event_source",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "index_name",
+              "displayName": "index_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "src_ip",
+              "displayName": "src_ip",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "dest_ip",
+              "displayName": "dest_ip",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "dest_port",
+              "displayName": "dest_port",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "asset_type",
+              "displayName": "asset_type",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "environment",
+              "displayName": "environment",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "risk_score",
+              "displayName": "risk_score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "raw_event",
+              "displayName": "raw_event",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "splunk_link",
+              "displayName": "splunk_link",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "notes",
+              "displayName": "notes",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "description",
+              "displayName": "description",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "event_id",
+              "displayName": "event_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "attempts",
+              "displayName": "attempts",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "suspicious_flag",
+              "displayName": "suspicious_flag",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "CommandLine",
+              "displayName": "CommandLine",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "event_time",
+              "displayName": "event_time",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "alert_type",
+              "displayName": "alert_type",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "logon_type",
+              "displayName": "logon_type",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "parent_process",
+              "displayName": "parent_process",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "process_name",
+              "displayName": "process_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "suspicious_process",
+              "displayName": "suspicious_process",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "file_hash",
+              "displayName": "file_hash",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "http_method",
+              "displayName": "http_method",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "status_code",
+              "displayName": "status_code",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "user_agent",
+              "displayName": "user_agent",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "uri",
+              "displayName": "uri",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "transaction_id",
+              "displayName": "transaction_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "created_at",
+              "displayName": "created_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "updated_at",
+              "displayName": "updated_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "investigating_at",
+              "displayName": "investigating_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "escalated_at",
+              "displayName": "escalated_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "escalated_by",
+              "displayName": "escalated_by",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "false_positive_at",
+              "displayName": "false_positive_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "closed_at",
+              "displayName": "closed_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "resolved_at",
+              "displayName": "resolved_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "vt_score",
+              "displayName": "vt_score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "vt_label",
+              "displayName": "vt_label",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "file_name",
+              "displayName": "file_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "soc_id_fallback",
+              "displayName": "soc_id_fallback",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "boolean",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        1840,
+        -1104
+      ],
+      "id": "1dc8451e-2c15-47a4-9d57-2064cfbe15dd",
+      "name": "Store Alert"
+    },
+    {
+      "parameters": {
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "#soc-alerts",
+          "mode": "name"
+        },
+        "text": "={{ $json.severity === 'critical' ? '🚨' : '⚠️' }} *SOC ALERT | {{$json.severity.toUpperCase()}}*\n\n*🆔 Alert Details*\n──────────────\n*ID:* {{$json.alert_id}}\n*Rule:* {{$json.rule_name}}\n*MITRE:* {{$json.mitre_tactic}} ({{$json.mitre_technique}})\n*Risk Score:* {{$json.risk_score}}\n\n*🖥️ Event Context*\n──────────────\n{{$json.alert_type === 'web' ? \n'*🌐 Source IP:* ' + $json.src_ip + '\\n' +\n'*🖥️ Host:* ' + $json.host + '\\n' +\n'*👤 User:* ' + $json.user + '\\n' +\n\n($json.filename ? '*📁 File:* ' + $json.filename + '\\n' : '') +\n($json.uri ? '*🌍 URI:* ' + $json.uri + '\\n' : '') +\n($json.http_method ? '*⚙️ Method:* ' + $json.http_method + '\\n' : '') +\n($json.status_code ? '*📡 Status:* ' + $json.status_code + '\\n' : '')\n\n:\n\n'*🖥️ Host:* ' + $json.host + '\\n' +\n'*👤 User:* ' + $json.user + '\\n' +\n($json.src_ip ? '*🌐 Source IP:* ' + $json.src_ip + '\\n' : '') +\n($json.process_name ? '*⚙️ Process:* ' + $json.process_name + '\\n' : '') +\n($json.parent_process ? '*🧬 Parent:* ' + $json.parent_process + '\\n' : '') +\n($json.CommandLine ? '*💻 Cmd:* ' + $json.CommandLine.substring(0,80) + '...\\n' : '') +\n($json.dest_ip ? '*🎯 Destination:* ' + $json.dest_ip + \n  ($json.dest_port ? ':' + $json.dest_port : '') + '\\n' : '')\n}}\n\n{{$json.vt_score > 0 || ($json.vt_label && $json.vt_label !== 'unknown') ? \n'\\n*🦠 Threat Intelligence*\\n──────────────\\n' +\n\n($json.vt_score > 0 \n  ? '*🔢 VT Score:* ' + $json.vt_score + '/100 ' + \n    ($json.vt_score >= 50 ? '🔴' : '🟡') + '\\n' \n  : '') +\n\n($json.vt_label && $json.vt_label !== 'unknown'\n  ? '*🏷️ Detection:* ' + $json.vt_label + '\\n'\n  : '')\n: ''}}\n\n*📊 Actions & Links*\n──────────────\n*🕒 Time:* {{$json.event_time}}\n*👨‍💻 Assigned:* Unassigned\n\n📊 Grafana : <http://192.168.56.108:3000/d/adbfmvf/soc-alert-dashboard?orgId=1&var-alert_id={{$json.alert_id}}|Show in Grafana>\n\n📜 Splunk : {{\n  (() => {\n    const url = $json.splunk_link;\n    const [base, query] = url.split(\"q=\");\n    const encoded = base + \"q=\" + encodeURIComponent(decodeURIComponent(query || \"\"));\n    return `<${encoded}|Show in Splunk>`;\n  })()\n}}",
+        "otherOptions": {
+          "includeLinkToWorkflow": false
+        }
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.4,
+      "position": [
+        2304,
+        -1248
+      ],
+      "id": "d3328291-d120-4c32-8920-f739f3d8ac00",
+      "name": "Slack Notification",
+      "webhookId": "de840604-7f59-45fa-95bf-b8e0deaeffdd",
+      "credentials": {
+        "slackApi": {
+          "id": "2pN9LB3rX9DzFY9m",
+          "name": "Slack account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://slack.com/api/chat.postMessage",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{\n  JSON.stringify({\n    \"channel\": \"#soc-alerts\",\n    \"text\": \"SOC Alert: \" + $('Attach SOC ID').item.json.alert_id,\n    \"blocks\": [\n      {\n        \"type\": \"section\",\n        \"text\": {\n          \"type\": \"mrkdwn\",\n          \"text\": \"🚨 *Critical Response Required*\\nHost *\" + $('Attach SOC ID').item.json.host + \"* triggered a critical alert.\\n\\n*Alert ID:* \" + $('Attach SOC ID').item.json.alert_id + \"\\n*Alert Name:* \" + $('Attach SOC ID').item.json.alert_name + \"\\n*Rule:* \" + $('Attach SOC ID').item.json.rule_name + \"\\n*MITRE:* \" + $('Attach SOC ID').item.json.mitre_tactic + \" (\" + $('Attach SOC ID').item.json.mitre_technique + \")\" + \"\\n*Risk Score:* \" + $('Attach SOC ID').item.json.risk_score\n        }\n      },\n      {\n        \"type\": \"actions\",\n        \"elements\": [\n          {\n            \"type\": \"button\",\n            \"text\": {\n              \"type\": \"plain_text\",\n              \"text\": \"🛑 Isolate Host\"\n            },\n            \"style\": \"danger\",\n            \"value\": \"isolate_\" + $('Attach SOC ID').item.json.alert_id + \"_\" + $('Attach SOC ID').item.json.host,\n            \"action_id\": \"isolate_host\"\n          }\n        ]\n      }\n    ]\n  })\n}}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        2512,
+        -1248
+      ],
+      "id": "89ad04e6-17a2-45f0-bfe3-c949834a3e41",
+      "name": "Slack Isolation Button",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "ZVAT5Tbb7FVgGahw",
+          "name": "Header Auth account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Extract Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Alert": {
+      "main": [
+        [
+          {
+            "node": "Has File Hash?",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Alert + VT Enrichment",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Extract Result": {
+      "main": [
+        [
+          {
+            "node": "Normalize Alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has File Hash?": {
+      "main": [
+        [
+          {
+            "node": "VT Enrichment API",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Alert + VT Enrichment",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "VT Enrichment API": {
+      "main": [
+        [
+          {
+            "node": "Apply VT Enrichment",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Apply VT Enrichment": {
+      "main": [
+        [
+          {
+            "node": "Alert + VT Enrichment",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Critical ?": {
+      "main": [
+        [
+          {
+            "node": "Slack Notification",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Alert + VT Enrichment": {
+      "main": [
+        [
+          {
+            "node": "Generate SOC ID",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Attach SOC ID": {
+      "main": [
+        [
+          {
+            "node": "Store Alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate SOC ID": {
+      "main": [
+        [
+          {
+            "node": "Attach SOC ID",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Store Alert": {
+      "main": [
+        [
+          {
+            "node": "Critical ?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Slack Notification": {
+      "main": [
+        [
+          {
+            "node": "Slack Isolation Button",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Slack Isolation Button": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "22a7a20f-8376-4cb8-b799-8a8d4e30879e",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "bca3700e16e54a7132990b7f31f29e20a15f257a855b01e6e47799d906f6456f"
+  },
+  "id": "J4xh6BU9XY8vuPrx",
+  "tags": []
+}

@@ -1,0 +1,250 @@
+{
+  "name": "SOC - Daily Summary Bot",
+  "nodes": [
+    {
+      "parameters": {
+        "jsCode": "const today = new Date().toISOString().slice(0, 10);\n\nreturn items.filter(item => {\n  const created = item.json.created_at;\n  if (!created) return false;\n\n  return created.startsWith(today);\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        448,
+        -16
+      ],
+      "id": "0e5a90f9-7b71-4a54-8d1b-d56dfbfcd488",
+      "name": "Filter Today's Alerts"
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 10 * * *"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        0,
+        -16
+      ],
+      "id": "d4e48617-61ba-440a-9dde-d5c8612f24da",
+      "name": "Daily 10AM Trigger"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "value": "oDfEbugU7spN85wj",
+          "mode": "list",
+          "cachedResultName": "SOC-Alert-Dashboard-Table",
+          "cachedResultUrl": "/projects/04kLsh8wTSUwZTmc/datatables/oDfEbugU7spN85wj"
+        }
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        224,
+        -16
+      ],
+      "id": "80da98ed-ed04-48cd-b3cd-bcef5662f517",
+      "name": "Fetch All Alerts"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "1047c2a8-cb7b-43e1-bd03-b7b9f57e84cc",
+              "leftValue": "={{ $input.all().length }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        672,
+        -16
+      ],
+      "id": "c72efe20-9f09-460a-bb19-a83d42b91b40",
+      "name": "Any Alerts Today?"
+    },
+    {
+      "parameters": {
+        "jsCode": "const now = new Date();\n\nconst dateString = now.toLocaleDateString('en-GB', {\n  weekday: 'short',\n  day: '2-digit',\n  month: 'short',\n  year: 'numeric',\n  timeZone: 'Asia/Kolkata'\n});\n\nconst timeString = now.toLocaleString('en-GB', {\n  day: '2-digit',\n  month: 'short',\n  year: 'numeric',\n  hour: '2-digit',\n  minute: '2-digit',\n  hour12: true,\n  timeZone: 'Asia/Kolkata'\n});\n\nlet total = 0;\nlet critical = 0, high = 0, medium = 0, low = 0;\nlet statusOpen = 0, statusInvestigating = 0, statusEscalated = 0;\nlet statusResolved = 0, statusFalsePositive = 0;\nlet statusContained = 0;\nlet criticalOpen = 0;\nlet slaBreach = 0, metSLA = 0;\nlet totalResolutionTime = 0;\nlet resolvedCount = 0;\nlet ageUnder1h = 0, ageUnder4h = 0, ageUnder24h = 0, ageOver24h = 0;\n\nconst analystPerformance = {};\nconst topRules = {};\nconst tactics = {};\nconst hostCounts = {};\nconst userCounts = {};\n\nfor (const item of items) {\n  const alert = item.json;\n  total++;\n\n  const severity = (alert.severity || \"\").toLowerCase().trim();\n  const rawStatus = (alert.status || \"\").toLowerCase().trim().replace(/[\\s\\-]+/g, \"_\");\n\n  // Severity\n  if (severity === \"critical\") critical++;\n  else if (severity === \"high\") high++;\n  else if (severity === \"medium\") medium++;\n  else if (severity === \"low\") low++;\n\n  // Status\n  const isOpen          = rawStatus === \"open\";\n  const isInvestigating = rawStatus === \"investigating\";\n  const isEscalated     = rawStatus === \"escalated\";\n  const isResolved      = rawStatus === \"resolved\" || rawStatus === \"closed\";\n  const isContained = rawStatus === \"contained\";\n  const isFP            = rawStatus === \"false_positive\" || rawStatus === \"falsepositive\";\n\n  // ✅ SOC FIX: Treat FP as resolved for lifecycle metrics\n  const isEffectivelyResolved = isResolved || isFP;\n\n  if (isOpen)          statusOpen++;\n  if (isInvestigating) statusInvestigating++;\n  if (isEscalated)     statusEscalated++;\n  if (isResolved)      statusResolved++;        // keep real resolved only\n  if (isContained) statusContained++;\n  if (isFP)            statusFalsePositive++;   // track FP separately\n\n  // Critical Open\n  if (severity === \"critical\" && (isOpen || isInvestigating || isEscalated)) {\n    criticalOpen++;\n  }\n\n  // Age + SLA\n  if (alert.created_at) {\n    const created = new Date(alert.created_at);\n    const diffMin = (now - created) / (1000 * 60);\n\n    if (diffMin < 60)        ageUnder1h++;\n    else if (diffMin < 240)  ageUnder4h++;\n    else if (diffMin < 1440) ageUnder24h++;\n    else                     ageOver24h++;\n\n    // ✅ UPDATED: use effective resolved\n    if (isEffectivelyResolved) {\n      resolvedCount++;\n      totalResolutionTime += diffMin;\n\n      if (diffMin <= 30) metSLA++;\n      else slaBreach++;\n\n    } else if (isOpen || isInvestigating || isEscalated) {\n      if (diffMin > 30) slaBreach++;\n    }\n\n    // Analyst tracking\n    const analyst = alert.analyst || \"Unassigned\";\n    if (!analystPerformance[analyst]) {\n      analystPerformance[analyst] = { closed: 0, fp: 0 };\n    }\n\n    // ✅ UPDATED: FP counts as closed work\n    if (isEffectivelyResolved) analystPerformance[analyst].closed++;\n    if (isFP) analystPerformance[analyst].fp++;\n  }\n\n  const rule = alert.rule_name || \"Unknown\";\n  topRules[rule] = (topRules[rule] || 0) + 1;\n\n  const tactic = alert.mitre_tactic || \"Unknown\";\n  tactics[tactic] = (tactics[tactic] || 0) + 1;\n\n  const host = alert.host || alert.src_ip || \"Unknown Host\";\n  hostCounts[host] = (hostCounts[host] || 0) + 1;\n\n  const user = alert.user || \"Unknown User\";\n  userCounts[user] = (userCounts[user] || 0) + 1;\n}\n\nconst avgMTTR  = resolvedCount > 0 ? Math.round(totalResolutionTime / resolvedCount) : 0;\nconst fpRate   = total > 0 ? Math.round((statusFalsePositive / total) * 100) : 0;\n\nconst analystSummary = Object.keys(analystPerformance).length\n  ? Object.entries(analystPerformance)\n      .map(([a, d]) => `• ${a}: ${d.closed} closed / ${d.fp} FP`)\n      .join(\"\\n\")\n  : \"No analyst activity today\";\n\nconst topRulesSummary = Object.entries(topRules)\n  .sort((a, b) => b[1] - a[1]).slice(0, 5)\n  .map(([r, c]) => `• ${r}: ${c}`)\n  .join(\"\\n\");\n\nconst tacticSummary = Object.entries(tactics)\n  .sort((a, b) => b[1] - a[1]).slice(0, 5)\n  .map(([t, c]) => `• ${t}: ${c}`)\n  .join(\"\\n\");\n\nconst topHost = Object.entries(hostCounts).sort((a,b)=>b[1]-a[1])[0];\nconst topUser = Object.entries(userCounts).sort((a,b)=>b[1]-a[1])[0];\n\nconst topHostSummary = topHost ? `${topHost[0]}  _(${topHost[1]} alerts)_` : \"N/A\";\nconst topUserSummary = topUser ? `${topUser[0]}  _(${topUser[1]} alerts)_` : \"N/A\";\n\nlet keyInsight = \"\";\nif (criticalOpen > 0)\n  keyInsight = `🚨 ${criticalOpen} critical alert(s) currently open — immediate action needed`;\nelse if (critical > 5)\n  keyInsight = \"🚨 High volume of critical alerts detected today\";\nelse if (fpRate > 30)\n  keyInsight = \"⚠️ High false positive rate observed — review detection rules\";\nelse\n  keyInsight = \"✅ Normal SOC operations\";\n\nconst slaBadge   = slaBreach > 0 ? \"⚠️ Breaches present\" : \"✅ All within SLA\";\nconst mttrBadge  = avgMTTR > 60 ? \"⚠️ Slow\" : avgMTTR > 0 ? \"✅ Good\" : \"—\";\nconst fpBadge    = fpRate > 30 ? \"⚠️ High\" : fpRate > 15 ? \"〽️ Elevated\" : \"✅ Normal\";\nconst ageBadge   = ageOver24h > 0 ? `⚠️ ${ageOver24h} stale` : \"✅ All fresh\";\nconst critBadge  = criticalOpen > 0 ? `🔴 ${criticalOpen} need action` : \"✅ None active\";\n\nreturn [{\n  json: {\n    dateString, timeString,\n    total, critical, high, medium, low,\n    statusOpen, statusInvestigating, statusEscalated, statusResolved, statusFalsePositive,\n    criticalOpen, fpRate, fpBadge,\n    avgMTTR, mttrBadge,\n    slaBreach, metSLA, slaBadge,\n    ageUnder1h, ageUnder4h, ageUnder24h, ageOver24h, ageBadge,\n    critBadge,\n    analystSummary, topRulesSummary, tacticSummary,\n    topHostSummary, topUserSummary,\n    keyInsight\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        896,
+        80
+      ],
+      "id": "c44e48dd-b747-4c89-b545-a3380b8090f5",
+      "name": "Build Daily Metrics"
+    },
+    {
+      "parameters": {
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "#soc-alerts",
+          "mode": "name"
+        },
+        "text": "=🛡️ *SOC DAILY SUMMARY* — {{$json.dateString}}\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n⚡ *KEY INSIGHT*\n\n{{$json.keyInsight}}\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n📊 *ALERT VOLUME*\n\nTotal Alerts Today: *{{$json.total}}*\n\n🔴 Critical: *{{$json.critical}}*\n🟠 High: {{$json.high}}\n🟡 Medium: {{$json.medium}}\n🟢 Low: {{$json.low}}\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n🚨 *CRITICAL OPEN ALERTS*\n\n{{$json.critBadge}}\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n📋 *ALERT STATUS*\n\n🔴 Open: {{$json.statusOpen}}\n🟡 Investigating: {{$json.statusInvestigating}}\n🟣 Escalated: {{$json.statusEscalated}}\n\n✅ Resolved: {{$json.statusResolved}}\n🔵 False Positive: {{$json.statusFalsePositive}} ({{$json.fpRate}}%) {{$json.fpBadge}}\n\n🧠 Detection Quality: {{$json.fpRate}}% FP\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n⏱️ *PERFORMANCE METRICS*\n\n• MTTR: *{{$json.avgMTTR}} min* {{$json.mttrBadge}}\n• SLA: {{$json.metSLA}} met / {{$json.slaBreach}} breached {{$json.slaBadge}}\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n🎯 *TOP AFFECTED ENTITIES*\n\n🖥️ Host: {{$json.topHostSummary}}\n👤 User: {{$json.topUserSummary}}\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n⏰ *OPEN ALERT AGE*\n\n• <1 hr: {{$json.ageUnder1h}}\n• 1–4 hr: {{$json.ageUnder4h}}\n• 4–24 hr: {{$json.ageUnder24h}}\n• >24 hr: {{$json.ageOver24h}}\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n👥 *ANALYST PERFORMANCE*\n\n{{$json.analystSummary}}\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n🎯 *TOP MITRE ATT&CK TACTICS*\n\n{{$json.tacticSummary}}\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n📈 *TOP ALERT RULES*\n\n{{$json.topRulesSummary}}\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n🕐 _Generated at {{$json.timeString}}_",
+        "otherOptions": {
+          "includeLinkToWorkflow": false
+        }
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.4,
+      "position": [
+        1120,
+        80
+      ],
+      "id": "47e4693c-6d90-48e4-9d3a-1b6688e7065a",
+      "name": "Send Daily Summary",
+      "webhookId": "e838544a-7a69-4b32-8732-27c7e4c36796",
+      "credentials": {
+        "slackApi": {
+          "id": "2pN9LB3rX9DzFY9m",
+          "name": "Slack account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "#soc-alerts",
+          "mode": "name"
+        },
+        "text": "=📊 *SOC Daily Summary*\n\nNo alerts detected today ✅\n🕒 Generated at: {{$now.toLocaleString('en-GB', { \n  day: '2-digit', \n  month: 'short', \n  year: 'numeric', \n  hour: '2-digit', \n  minute: '2-digit' \n})}}",
+        "otherOptions": {
+          "includeLinkToWorkflow": false
+        }
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.4,
+      "position": [
+        896,
+        -112
+      ],
+      "id": "3ad06c5f-dec7-4ab2-b5b9-2a9b16901e79",
+      "name": "Send No Alerts Message",
+      "webhookId": "10903c2f-031e-4bde-bb87-90b47f3f2405",
+      "credentials": {
+        "slackApi": {
+          "id": "2pN9LB3rX9DzFY9m",
+          "name": "Slack account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Filter Today's Alerts": {
+      "main": [
+        [
+          {
+            "node": "Any Alerts Today?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Daily 10AM Trigger": {
+      "main": [
+        [
+          {
+            "node": "Fetch All Alerts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch All Alerts": {
+      "main": [
+        [
+          {
+            "node": "Filter Today's Alerts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Any Alerts Today?": {
+      "main": [
+        [
+          {
+            "node": "Send No Alerts Message",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Build Daily Metrics",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Daily Metrics": {
+      "main": [
+        [
+          {
+            "node": "Send Daily Summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Daily Summary": {
+      "main": [
+        []
+      ]
+    },
+    "Send No Alerts Message": {
+      "main": [
+        []
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "05b99399-70ff-41f0-a410-48575141164b",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "bca3700e16e54a7132990b7f31f29e20a15f257a855b01e6e47799d906f6456f"
+  },
+  "id": "RVrjby6kA2nk70nW",
+  "tags": []
+}

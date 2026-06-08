@@ -1,0 +1,116 @@
+{
+  "name": "SOC - Alert Activity API",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "soc-alert-activity-api",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "843c7787-dd72-455f-9ac1-9d354e6f1766",
+      "name": "Webhook",
+      "webhookId": "614e4736-3967-420b-bbce-81df32c4bf8e"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "value": "KhNXu30ELKFAnv6k",
+          "mode": "list",
+          "cachedResultName": "SOC-Alert-Activity-Table",
+          "cachedResultUrl": "/projects/04kLsh8wTSUwZTmc/datatables/KhNXu30ELKFAnv6k"
+        }
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        208,
+        0
+      ],
+      "id": "a547e2bc-edc2-4bb1-8a1f-265870a46ab6",
+      "name": "Fetch All Activity Rows"
+    },
+    {
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        416,
+        0
+      ],
+      "id": "5a6dad11-78ac-4731-ac35-7883251d5651",
+      "name": "Aggregate Activity Data"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        640,
+        0
+      ],
+      "id": "73074e4c-9f49-43ea-9fc4-96fd430383fc",
+      "name": "Return Activity Feed"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Fetch All Activity Rows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch All Activity Rows": {
+      "main": [
+        [
+          {
+            "node": "Aggregate Activity Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate Activity Data": {
+      "main": [
+        [
+          {
+            "node": "Return Activity Feed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "3158b71c-c749-4582-8605-5b9c9cff93a4",
+  "meta": {
+    "instanceId": "bca3700e16e54a7132990b7f31f29e20a15f257a855b01e6e47799d906f6456f"
+  },
+  "id": "YYXXfPuZd8KGsSGX",
+  "tags": []
+}

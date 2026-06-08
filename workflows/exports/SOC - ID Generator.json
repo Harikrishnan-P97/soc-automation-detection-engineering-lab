@@ -1,0 +1,553 @@
+{
+  "name": "SOC - ID Generator",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "generate-soc-id",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -352,
+        320
+      ],
+      "id": "e2f29056-1a1b-4f4e-a39a-2527f55113cd",
+      "name": "Receive SOC ID Request",
+      "webhookId": "6e8ed4dd-4efa-40df-972d-9f97d6edf841"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "value": "tU7qJGsJFDWhJL2t",
+          "mode": "list",
+          "cachedResultName": "SOC-Alert-Counter-Table",
+          "cachedResultUrl": "/projects/04kLsh8wTSUwZTmc/datatables/tU7qJGsJFDWhJL2t"
+        },
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "counter_name",
+              "keyValue": "SOC_ALERT"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        -64,
+        320
+      ],
+      "id": "8dc59d53-02f6-476d-b042-4a0f836fe331",
+      "name": "Read Counter Value",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get the current item (from Get row(s) on first run, \n// or from the loop — but we need retry_count from previous context)\n// n8n passes all input items; check for retry_count in any of them\n\nconst tableRow = $input.all().find(i => i.json.current_value !== undefined);\nconst retryItem = $input.all().find(i => i.json.retry_count !== undefined);\n\nconst current = tableRow?.json?.current_value || 0;\nconst retry_count = (retryItem?.json?.retry_count || 0) + 1;\nconst next = current + 1;\n\nreturn [\n  {\n    json: {\n      current_value: current,\n      next_value: next,\n      soc_id: \"SOC-\" + String(next).padStart(4, \"0\"),\n      retry_count\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        400,
+        0
+      ],
+      "id": "f798cef3-059a-4929-aae7-9dc80a955855",
+      "name": "Compute Next SOC ID"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "dataTableId": {
+          "__rl": true,
+          "value": "tU7qJGsJFDWhJL2t",
+          "mode": "list",
+          "cachedResultName": "SOC-Alert-Counter-Table",
+          "cachedResultUrl": "/projects/04kLsh8wTSUwZTmc/datatables/tU7qJGsJFDWhJL2t"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "counter_name",
+              "keyValue": "SOC_ALERT"
+            },
+            {
+              "keyName": "current_value",
+              "keyValue": "={{ $json.current_value }}"
+            }
+          ]
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "current_value": "={{$json.next_value}}",
+            "current_soc_id": "={{$json.soc_id}}"
+          },
+          "matchingColumns": [
+            "current_value"
+          ],
+          "schema": [
+            {
+              "id": "counter_name",
+              "displayName": "counter_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "current_value",
+              "displayName": "current_value",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "current_soc_id",
+              "displayName": "current_soc_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {
+          "dryRun": false
+        }
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        640,
+        176
+      ],
+      "id": "857f5eff-2a7d-4d23-b166-9d6ddb5a0e0c",
+      "name": "Atomic Counter Update",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "7422fd96-3289-4710-a959-3c5bfe59ce93",
+              "leftValue": "={{ $json.id !== undefined }}",
+              "rightValue": "={{ 0 }}",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1072,
+        16
+      ],
+      "id": "ea410965-ce35-4f6d-ad2b-cedca38aa96e",
+      "name": "Update Succeeded?"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "657395ac-e018-437b-97aa-fd7f22fd543c",
+              "leftValue": "={{ $json.retry_count }}",
+              "rightValue": 5,
+              "operator": {
+                "type": "number",
+                "operation": "gte"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1296,
+        96
+      ],
+      "id": "f4df35ca-068d-482a-be3c-fdba3042adf6",
+      "name": "Max Retries Reached?"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "d7807c78-bab1-4dfa-b314-1030b6169240",
+              "name": "retry_count",
+              "value": "={{ $json.retry_count }}",
+              "type": "number"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1664,
+        400
+      ],
+      "id": "727b026c-e97f-4604-916a-59abd51b04b6",
+      "name": "Preserve Retry Count"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { \"soc_id\": $json.soc_id, \"counter\": $json.next_value } }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        1296,
+        -64
+      ],
+      "id": "6e9d9a02-1f05-40d3-89d0-46989b7a97a1",
+      "name": "Return SOC ID"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { \n  \"error\": \"Failed to generate SOC ID after retries\",\n  \"retry_count\": $json.retry_count\n} }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        1664,
+        -32
+      ],
+      "id": "1c237f45-4490-41ed-a6c7-314433d9e326",
+      "name": "Return Retry Failure"
+    },
+    {
+      "parameters": {
+        "dataTableId": {
+          "__rl": true,
+          "value": "tU7qJGsJFDWhJL2t",
+          "mode": "list",
+          "cachedResultName": "SOC-Alert-Counter-Table",
+          "cachedResultUrl": "/projects/04kLsh8wTSUwZTmc/datatables/tU7qJGsJFDWhJL2t"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "counter_name": "SOC_ALERT",
+            "current_value": 0,
+            "current_soc_id": "SOC-0000"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "counter_name",
+              "displayName": "counter_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "current_value",
+              "displayName": "current_value",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "current_soc_id",
+              "displayName": "current_soc_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        400,
+        320
+      ],
+      "id": "5fe4e83b-b4c3-4e10-b7df-be5e7fc31fda",
+      "name": "Initialize Counter"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "e8374eb9-3e03-445b-b640-7ec7ae2b7171",
+              "leftValue": "={{ $json.counter_name }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        176,
+        96
+      ],
+      "id": "bd328c94-ca95-44fe-b6bc-ba215e1624c3",
+      "name": "Counter Exists?"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        848,
+        16
+      ],
+      "id": "aed8c524-f4f5-403d-ab38-f20dd47a2455",
+      "name": "Combine Compute + Update Result"
+    },
+    {
+      "parameters": {
+        "amount": 0.2
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        1872,
+        400
+      ],
+      "id": "3c5dcb4c-af1f-4b96-85b9-bced6c91b93a",
+      "name": "Wait",
+      "webhookId": "c0837c51-eb71-4795-a384-22c98cfa21e6"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Receive SOC ID Request": {
+      "main": [
+        [
+          {
+            "node": "Read Counter Value",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Counter Value": {
+      "main": [
+        [
+          {
+            "node": "Counter Exists?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Compute Next SOC ID": {
+      "main": [
+        [
+          {
+            "node": "Combine Compute + Update Result",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Atomic Counter Update",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Atomic Counter Update": {
+      "main": [
+        [
+          {
+            "node": "Combine Compute + Update Result",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Update Succeeded?": {
+      "main": [
+        [
+          {
+            "node": "Return SOC ID",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Max Retries Reached?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Max Retries Reached?": {
+      "main": [
+        [
+          {
+            "node": "Return Retry Failure",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Preserve Retry Count",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Preserve Retry Count": {
+      "main": [
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Counter Exists?": {
+      "main": [
+        [
+          {
+            "node": "Compute Next SOC ID",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Initialize Counter",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Initialize Counter": {
+      "main": [
+        [
+          {
+            "node": "Read Counter Value",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Combine Compute + Update Result": {
+      "main": [
+        [
+          {
+            "node": "Update Succeeded?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait": {
+      "main": [
+        [
+          {
+            "node": "Read Counter Value",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "9a35231d-7107-42da-a962-175336bf1cc6",
+  "meta": {
+    "instanceId": "bca3700e16e54a7132990b7f31f29e20a15f257a855b01e6e47799d906f6456f"
+  },
+  "id": "iOv2rsitLtwFpbWL",
+  "tags": []
+}

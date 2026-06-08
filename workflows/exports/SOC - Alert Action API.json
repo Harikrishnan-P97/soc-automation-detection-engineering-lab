@@ -1,0 +1,512 @@
+{
+  "name": "SOC - Alert Action API",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "soc-alert-action-api",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "fd1415de-fadf-4c52-a50f-715e6de71ed2",
+      "name": "Webhook",
+      "webhookId": "f1be2a1b-3156-417f-b170-155c6599fcad"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "value": "oDfEbugU7spN85wj",
+          "mode": "list",
+          "cachedResultName": "SOC-Alert-Dashboard-Table",
+          "cachedResultUrl": "/projects/04kLsh8wTSUwZTmc/datatables/oDfEbugU7spN85wj"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "alert_id",
+              "keyValue": "={{$json[\"body\"][\"alert_id\"]}}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        208,
+        0
+      ],
+      "id": "0f69f236-3ba8-4808-89d6-6b688c20d3b0",
+      "name": "Fetch Existing Alert"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "dataTableId": {
+          "__rl": true,
+          "value": "oDfEbugU7spN85wj",
+          "mode": "list",
+          "cachedResultName": "SOC-Alert-Dashboard-Table",
+          "cachedResultUrl": "/projects/04kLsh8wTSUwZTmc/datatables/oDfEbugU7spN85wj"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "alert_id",
+              "keyValue": "={{$node[\"Webhook\"].json[\"body\"][\"alert_id\"]}}"
+            }
+          ]
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "status": "={{$node[\"Webhook\"].json[\"body\"][\"status\"]}}",
+            "analyst": "={{$node[\"Webhook\"].json[\"body\"][\"analyst\"]}}",
+            "notes": "={{$node[\"Webhook\"].json[\"body\"][\"notes\"]}}",
+            "updated_at": "={{$now.toISO()}}",
+            "closed_at": "={{$node[\"Webhook\"].json[\"body\"][\"status\"] == \"closed\" ? $now.toISO() : $json[\"closed_at\"]}}",
+            "investigating_at": "={{$node[\"Webhook\"].json[\"body\"][\"status\"] == \"investigating\" ? $now.toISO() : $json[\"investigating_at\"]}}",
+            "escalated_at": "={{$node[\"Webhook\"].json[\"body\"][\"status\"] == \"escalated\" ? $now.toISO() : $json[\"escalated_at\"]}}",
+            "false_positive_at": "={{$node[\"Webhook\"].json[\"body\"][\"status\"] == \"false_positive\" ? $now.toISO() : $json[\"false_positive_at\"]}}",
+            "escalated_by": "={{$node[\"Webhook\"].json[\"body\"][\"status\"] == \"escalated\" ? $node[\"Webhook\"].json[\"body\"][\"analyst\"] : $json[\"escalated_by\"]}}",
+            "resolved_at": "={{$node[\"Webhook\"].json[\"body\"][\"status\"] == \"closed\" ? $now.toISO() : ($node[\"Webhook\"].json[\"body\"][\"status\"] == \"false_positive\" ? $now.toISO() : $json[\"resolved_at\"])}}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "alert_id",
+              "displayName": "alert_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "alert_name",
+              "displayName": "alert_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "severity",
+              "displayName": "severity",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "source",
+              "displayName": "source",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "host",
+              "displayName": "host",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "user",
+              "displayName": "user",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "timestamp",
+              "displayName": "timestamp",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "analyst",
+              "displayName": "analyst",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "notes",
+              "displayName": "notes",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "splunk_link",
+              "displayName": "splunk_link",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "created_at",
+              "displayName": "created_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "updated_at",
+              "displayName": "updated_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "closed_at",
+              "displayName": "closed_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "investigating_at",
+              "displayName": "investigating_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "escalated_at",
+              "displayName": "escalated_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "mitre_tactic",
+              "displayName": "mitre_tactic",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "mitre_technique",
+              "displayName": "mitre_technique",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "rule_name",
+              "displayName": "rule_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "false_positive_at",
+              "displayName": "false_positive_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "description",
+              "displayName": "description",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "escalated_by",
+              "displayName": "escalated_by",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "resolved_at",
+              "displayName": "resolved_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        416,
+        0
+      ],
+      "id": "c5d55ae8-5b93-4a09-8179-00a1e89e28d0",
+      "name": "Update Alert Status"
+    },
+    {
+      "parameters": {
+        "dataTableId": {
+          "__rl": true,
+          "value": "KhNXu30ELKFAnv6k",
+          "mode": "list",
+          "cachedResultName": "SOC-Alert-Activity-Table",
+          "cachedResultUrl": "/projects/04kLsh8wTSUwZTmc/datatables/KhNXu30ELKFAnv6k"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "activity_id": "={{ \"ACT-\" + Date.now() }}",
+            "alert_id": "={{$node[\"Webhook\"].json[\"body\"][\"alert_id\"]}}",
+            "analyst": "={{$node[\"Webhook\"].json[\"body\"][\"analyst\"]}}",
+            "note": "={{$node[\"Webhook\"].json[\"body\"][\"notes\"]}}",
+            "timestamp": "={{$now.toISO()}}",
+            "action": "={{$node[\"Webhook\"].json[\"body\"][\"status\"]}}",
+            "summary": "={{$node[\"Webhook\"].json[\"body\"][\"notes\"]}}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "activity_id",
+              "displayName": "activity_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "alert_id",
+              "displayName": "alert_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "analyst",
+              "displayName": "analyst",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "action",
+              "displayName": "action",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "note",
+              "displayName": "note",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "timestamp",
+              "displayName": "timestamp",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "summary",
+              "displayName": "summary",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        624,
+        0
+      ],
+      "id": "d3ea9725-dc18-4df3-b439-96feacddf686",
+      "name": "Log Activity Entry"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "{ \"status\": \"updated\" }",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        832,
+        0
+      ],
+      "id": "a1fd1535-1aca-4a05-9a64-93b7c78ac6b5",
+      "name": "Return Success Response"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Fetch Existing Alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Existing Alert": {
+      "main": [
+        [
+          {
+            "node": "Update Alert Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Alert Status": {
+      "main": [
+        [
+          {
+            "node": "Log Activity Entry",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log Activity Entry": {
+      "main": [
+        [
+          {
+            "node": "Return Success Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "0508273e-e944-4a77-89fc-8102f0a2efdf",
+  "meta": {
+    "instanceId": "bca3700e16e54a7132990b7f31f29e20a15f257a855b01e6e47799d906f6456f"
+  },
+  "id": "2czCg00BOYFOMwRH",
+  "tags": []
+}

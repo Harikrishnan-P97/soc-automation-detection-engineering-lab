@@ -1,0 +1,117 @@
+{
+  "name": "SOC - Alerts Timeline API",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "soc-alert-timeline",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -528,
+        0
+      ],
+      "id": "a50c9770-6419-4fc8-9f80-264c77595589",
+      "name": "Webhook",
+      "webhookId": "3a95e3c2-4c3d-4c19-bdb8-34c2b20c88a8"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "value": "oDfEbugU7spN85wj",
+          "mode": "list",
+          "cachedResultName": "SOC-Alert-Dashboard-Table",
+          "cachedResultUrl": "/projects/04kLsh8wTSUwZTmc/datatables/oDfEbugU7spN85wj"
+        }
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        -304,
+        0
+      ],
+      "id": "3ee7b387-c1c7-47ba-8cfe-e0488c792901",
+      "name": "Fetch All Alerts",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "jsCode": "const alerts = items.map(i => i.json);\n\nconst buckets = {};\n\nalerts.forEach(alert => {\n\n  const time = new Date(alert.timestamp);\n\n  // group per minute\n  const bucket =\n    time.getFullYear() + \"-\" +\n    String(time.getMonth()+1).padStart(2,'0') + \"-\" +\n    String(time.getDate()).padStart(2,'0') + \" \" +\n    String(time.getHours()).padStart(2,'0') + \":\" +\n    String(time.getMinutes()).padStart(2,'0');\n\n  if (!buckets[bucket]) {\n    buckets[bucket] = {\n      timestamp: bucket,\n      open: 0,\n      investigating: 0,\n      contained: 0,\n      closed: 0,\n      escalated: 0,\n      false_positive: 0\n    };\n  }\n\n  const status = alert.status?.toLowerCase();\n\n  if (buckets[bucket][status] !== undefined) {\n    buckets[bucket][status]++;\n  }\n\n});\n\nreturn Object.values(buckets).map(b => ({ json: b }));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -96,
+        0
+      ],
+      "id": "27addb5e-e228-404d-87f5-4233c7810f8a",
+      "name": "Bucket Alerts by Minute"
+    },
+    {
+      "parameters": {
+        "respondWith": "allIncomingItems",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        128,
+        0
+      ],
+      "id": "bc73a5d5-5511-4a0f-a642-5a9ce8e63048",
+      "name": "Return Timeline Data"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Fetch All Alerts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch All Alerts": {
+      "main": [
+        [
+          {
+            "node": "Bucket Alerts by Minute",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Bucket Alerts by Minute": {
+      "main": [
+        [
+          {
+            "node": "Return Timeline Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "bd8a30bf-13b9-4d36-912d-8870291c22c6",
+  "meta": {
+    "instanceId": "bca3700e16e54a7132990b7f31f29e20a15f257a855b01e6e47799d906f6456f"
+  },
+  "id": "MWZAU8HN3pisMykV",
+  "tags": []
+}

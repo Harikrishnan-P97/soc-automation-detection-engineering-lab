@@ -1,0 +1,543 @@
+{
+  "name": "SOC - VirusTotal Enrichment API",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "vt-enrichment-api",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        -752
+      ],
+      "id": "1af152f0-1640-4ea2-bd63-0de2ee510eeb",
+      "name": "Webhook",
+      "webhookId": "90176095-13a9-4d46-9075-c81a6f1692b4"
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $json.data?.attributes;\n\nif (!data) {\n  return [{\n    error: \"vt_parse_error\",\n    message: \"Missing VT attributes\"\n  }];\n}\n\nreturn [{\n  ...$json,\n  vt_malicious: data.last_analysis_stats.malicious,\n  vt_suspicious: data.last_analysis_stats.suspicious,\n  vt_undetected: data.last_analysis_stats.undetected,\n  vt_label: data.popular_threat_classification?.suggested_threat_label || \"unknown\",\n  vt_file_name: data.meaningful_name,\n  vt_sha256: data.sha256\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        896,
+        -928
+      ],
+      "id": "d142def1-b526-4ab0-acbc-35060a8dbd6e",
+      "name": "Parse VT Data"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "a25e0f68-fd90-43b0-b1cc-7da99ae1cc36",
+              "leftValue": "={{ $json.body.file_hash }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "253912a7-60ac-45cc-8b3a-fe7ff47e5f30",
+              "leftValue": "={{ $json.body.file_hash }}",
+              "rightValue": "^[A-Fa-f0-9]{64}$",
+              "operator": {
+                "type": "string",
+                "operation": "regex"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        224,
+        -752
+      ],
+      "id": "28588fd7-656b-4794-898f-be0f36711eaa",
+      "name": "Valid Hash ?"
+    },
+    {
+      "parameters": {
+        "url": "=https://www.virustotal.com/api/v3/files/{{$json.body.file_hash}}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "virusTotalApi",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        448,
+        -848
+      ],
+      "id": "48682ea3-e67e-4371-9d4d-f0230395d9ad",
+      "name": "Query VT",
+      "credentials": {
+        "virusTotalApi": {
+          "id": "Bqr1dSUmPNAUa577",
+          "name": "VirusTotal account"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "69ba6984-9ac9-4f8d-b50a-386c7f7fcc2e",
+              "leftValue": "={{ $json.vt_malicious }}",
+              "rightValue": 10,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1344,
+        -992
+      ],
+      "id": "3f1e4610-e683-4c75-a06c-55eed35fdb79",
+      "name": "Malicious > 10"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "8a66db3c-2ec8-4826-8629-4389924257ea",
+              "name": "verdict",
+              "value": "malicious",
+              "type": "string"
+            },
+            {
+              "id": "5a6dc854-35ec-4671-821c-1466e1cae116",
+              "name": "severity",
+              "value": "critical",
+              "type": "string"
+            },
+            {
+              "id": "85c98247-dd4c-4cf9-ab28-e9fbd047cdb9",
+              "name": "risk_score",
+              "value": "={{ $json.vt_malicious * 2 }}",
+              "type": "number"
+            },
+            {
+              "id": "a500400c-ea29-45a6-8de1-b9ed7b806b0c",
+              "name": "vt_score",
+              "value": "={{ $json.vt_malicious }}",
+              "type": "number"
+            },
+            {
+              "id": "a2882775-0582-40c2-ac8e-b729b17431ed",
+              "name": "vt_label",
+              "value": "={{ $json.vt_label }}",
+              "type": "string"
+            },
+            {
+              "id": "4f11b689-c9ca-40c8-8558-d1b03244b5c4",
+              "name": "file_name",
+              "value": "={{ $json.vt_file_name }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1568,
+        -1088
+      ],
+      "id": "368251e1-4b50-466a-b9d5-6654365eb081",
+      "name": "High Risk"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "1fad8c38-e9c7-4d63-8f5c-1c95b9aaad07",
+              "name": "verdict",
+              "value": "suspicious",
+              "type": "string"
+            },
+            {
+              "id": "f19b7b7b-d743-4275-8f84-9b946ce0ed89",
+              "name": "severity",
+              "value": "medium",
+              "type": "string"
+            },
+            {
+              "id": "4997108d-0581-4135-b4bb-746b6d1e90d2",
+              "name": "risk_score",
+              "value": "={{ $json.vt_malicious }}",
+              "type": "number"
+            },
+            {
+              "id": "22c8be55-a65b-41c6-a8cf-b98c2372a2af",
+              "name": "vt_score",
+              "value": "={{ $json.vt_malicious }}",
+              "type": "number"
+            },
+            {
+              "id": "e8577823-ea60-4bcc-a96d-219e10378c4b",
+              "name": "vt_label",
+              "value": "={{ $json.vt_label }}",
+              "type": "string"
+            },
+            {
+              "id": "c4c81dbb-7add-417d-8e46-17cea0561447",
+              "name": "file_name",
+              "value": "={{ $json.vt_file_name }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1568,
+        -896
+      ],
+      "id": "8e32b081-bc58-4fd0-a96a-c8bc32e68d64",
+      "name": "Low Risk"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        1792,
+        -752
+      ],
+      "id": "39cd05eb-dfb5-49c5-ba69-1cd43c7ed469",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "7b5933f5-a62e-4663-b706-77e6e59e0286",
+              "name": "error",
+              "value": "invalid_hash",
+              "type": "string"
+            },
+            {
+              "id": "9b6d1d1d-7357-4710-8d32-b71103778325",
+              "name": "message",
+              "value": "Provided file hash is missing or not SHA256",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1568,
+        -416
+      ],
+      "id": "be371cb0-7a1e-4310-b3e5-0924d063f783",
+      "name": "Error"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "87d86331-7a09-4370-a823-fbbc8be30ea4",
+              "leftValue": "={{ !!$json.data }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        672,
+        -848
+      ],
+      "id": "8aabb4ca-48c6-4aed-a244-68fdd300c592",
+      "name": "VT Data Exists"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "d2dc587c-13ae-4ae4-9504-a8b76a38ba5d",
+              "name": "error",
+              "value": "vt_lookup_failed",
+              "type": "string"
+            },
+            {
+              "id": "668cbb42-c678-48c1-9843-b70d77dba783",
+              "name": "message",
+              "value": "VirusTotal lookup failed or file not found",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1568,
+        -608
+      ],
+      "id": "492b410a-73d0-4c80-b639-c046f47afcdc",
+      "name": "VT Lookup Failed"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "f7ba07b8-281a-4373-99ea-1edb0040f0d9",
+              "leftValue": "={{ $json.error }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "exists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1120,
+        -928
+      ],
+      "id": "8e8624ba-f3c9-4d25-96d8-1efd8e2a22e3",
+      "name": "Parse Error"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Valid Hash ?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse VT Data": {
+      "main": [
+        [
+          {
+            "node": "Parse Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Valid Hash ?": {
+      "main": [
+        [
+          {
+            "node": "Query VT",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Query VT": {
+      "main": [
+        [
+          {
+            "node": "VT Data Exists",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Malicious > 10": {
+      "main": [
+        [
+          {
+            "node": "High Risk",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Low Risk",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "High Risk": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Low Risk": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Error": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "VT Data Exists": {
+      "main": [
+        [
+          {
+            "node": "Parse VT Data",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "VT Lookup Failed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "VT Lookup Failed": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Error": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Malicious > 10",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "75fd2166-b996-404a-b7cd-f5b6b9eb89f5",
+  "meta": {
+    "instanceId": "bca3700e16e54a7132990b7f31f29e20a15f257a855b01e6e47799d906f6456f"
+  },
+  "id": "EZ2sVWZaawAJxq6H",
+  "tags": []
+}
