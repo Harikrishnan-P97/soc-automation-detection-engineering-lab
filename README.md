@@ -429,9 +429,11 @@ Detailed workflow documentation:
 
 # Platform Screenshots
 
-## SOC Alert Queue
-add soc dashboard screenshot
+## SOC Grafana Dashboard
+![SOC Grafana Dashboard](screenshots/grafana/Grafana-Dashboard1.png)
 
+## SOC Alert Queue
+![SOC Alert Queue](screenshots/grafana/Grafana-Dashboard2.png)
 
 ## SOC Alert Intake Workflow
 
