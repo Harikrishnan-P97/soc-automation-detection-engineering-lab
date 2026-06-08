@@ -85,7 +85,7 @@ This helps identify:
 
 ## Sample Output
 
-![Port Scanning Detection (Suricata)](screenshots/splunk/Port-Scanning-Detection-Suricata.png)
+![Port Scanning Detection (Suricata)](./screenshots/splunk/Port-Scanning-Detection-Suricata.png)
 
 ---
 
