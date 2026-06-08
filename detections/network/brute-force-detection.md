@@ -87,11 +87,7 @@ This helps identify:
 
 Insert screenshot:
 
-```text
-screenshots/splunk/Port-Scanning-Detection-Suricata.png
-```
-
-(Replace with your actual brute-force screenshot if available.)
+- screenshots/splunk/Port-Scanning-Detection-Suricata.png
 
 ---
 

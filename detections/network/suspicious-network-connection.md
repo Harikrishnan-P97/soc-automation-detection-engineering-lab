@@ -103,11 +103,7 @@ This detection focuses on identifying:
 
 ## Sample Output
 
-Insert screenshot:
-
-```text
-screenshots/splunk/Triggered-Alerts.png
-```
+- screenshots/splunk/Triggered-Alerts.png
 
 ---
 
