@@ -58,10 +58,10 @@ This diagram demonstrates how the lab simulates a SOC environment from initial d
 
 For additional context, refer to:
 
-* `../docs/lab-overview.md`
-* `../docs/architecture.md`
-* `../docs/telemetry-pipeline.md`
-* `../docs/incident-response-workflow.md`
+- [Lab Overview](../docs/lab-overview.md)
+- [Architecture](../docs/architecture.md)
+- [Telemetry Pipeline](../docs/telemetry-pipeline.md)
+- [Incident Response Workflow](../docs/incident-response-workflow.md)
 
 These documents provide detailed explanations of the components and workflows represented in the diagrams.
 
