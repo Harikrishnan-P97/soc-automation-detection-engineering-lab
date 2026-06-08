@@ -143,10 +143,8 @@ The lab simulates a modern SOC environment composed of multiple security layers.
 
 Additional architecture documentation is available in:
 
-```text
-architecture/
-docs/architecture.md
-```
+- [Architecture Diagrams](architecture/)
+- [Architecture Documentation](docs/architecture.md)
 
 ---
 
@@ -197,9 +195,7 @@ Telemetry Sources
 
 Detailed telemetry documentation:
 
-```text
-docs/telemetry-pipeline.md
-```
+- [Telemetry Pipeline](docs/telemetry-pipeline.md)
 
 ---
 
@@ -319,9 +315,7 @@ The lab simulates realistic attacker activity across multiple stages of an attac
 
 Detection documentation:
 
-```text
-detections/
-```
+- [Detection Engineering Documentation](detections/)
 
 ---
 
@@ -342,9 +336,7 @@ detections/
 
 Workflow exports:
 
-```text
-workflows/
-```
+- [n8n Workflow Documentation](workflows/)
 
 ---
 
@@ -374,9 +366,7 @@ Provides:
 
 Dashboard exports:
 
-```text
-dashboards/
-```
+- [Grafana Dashboard Documentation](dashboards/)
 
 ---
 
@@ -402,9 +392,7 @@ Closure
 
 Detailed workflow documentation:
 
-```text
-docs/incident-response-workflow.md
-```
+- [Incident Response Workflow](docs/incident-response-workflow.md)
 
 ---
 
@@ -441,9 +429,13 @@ docs/incident-response-workflow.md
 
 # Platform Screenshots
 
-## SOC Alert Dashboard
+## SOC Alert Queue
+add soc dashboard screenshot
 
-![SOC Dashboard](screenshots/n8n/SOC-Alert-Dashboard.png)
+
+## SOC Alert Intake Workflow
+
+![SOC Alert Intake Workflow](screenshots/n8n/SOC-Alert-Intake.png)
 
 ## Alert Investigation Dashboard
 
@@ -463,6 +455,8 @@ docs/incident-response-workflow.md
 * Detection tuning is critical for reducing false positives.
 * Security visibility improves when multiple telemetry sources are correlated.
 * End-to-end attack simulations reveal gaps that isolated testing often misses.
+
+- [Lessons Learned](docs/lessons-learned.md)
 
 ---
 
@@ -505,9 +499,7 @@ soc-automation-detection-engineering-lab
 
 Additional project documentation:
 
-```text
-phishing-lab/writeups.md
-```
+- [Phishing Lab Documentation](phishing-lab/)
 
 ---
 
@@ -519,16 +511,27 @@ All attack simulations were conducted in an isolated lab environment owned and c
 
 ---
 
-# Author
+## Author
 
 **Harikrishnan P**
 
-Cybersecurity • SOC Operations • Detection Engineering • Security Automation
+Aspiring SOC Analyst focused on Detection Engineering, Security Monitoring, Incident Response, and Security Automation.
 
-* GitHub: *(Add Link)*
-* LinkedIn: *(Add Link)*
-* Medium: *(Add Link)*
+### Connect With Me
+
+- GitHub: [Harikrishnan-P97](https://github.com/Harikrishnan-P97)
+- LinkedIn: [Harikrishnan P](https://www.linkedin.com/in/harikrishnanp097/)
+- Medium: [@harikrishnan.p097](https://medium.com/@harikrishnan.p097)
 
 ---
 
-For detailed documentation, refer to the `docs/`, `detections/`, `workflows/`, `dashboards/`, and `phishing-lab/` directories.
+## Explore the Repository
+
+| Section | Description |
+|----------|-------------|
+| [Docs](docs/) | Lab overview, architecture, telemetry pipeline, incident response workflow, lessons learned |
+| [Detections](detections/) | Splunk detection engineering content and detection logic |
+| [Workflows](workflows/) | n8n SOAR workflow exports and documentation |
+| [Dashboards](dashboards/) | Grafana dashboard exports and dashboard documentation |
+| [Phishing Lab](phishing-lab/) | End-to-end phishing simulation project and attack chain analysis |
+| [Architecture](architecture/) | Architecture diagrams and telemetry flow diagrams |
