@@ -101,16 +101,6 @@ The alert should contain:
 
 ---
 
-## Sample Output
-
-Insert screenshot:
-
-```text
-screenshots/splunk/<failed-login-alert>.png
-```
-
----
-
 ## Lessons Learned
 
 Authentication failures generate valuable telemetry for identifying brute-force activity and unauthorized access attempts. Proper filtering significantly reduces noise while maintaining visibility into potentially malicious behavior.

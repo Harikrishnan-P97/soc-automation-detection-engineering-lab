@@ -99,16 +99,6 @@ The alert should contain:
 
 ---
 
-## Sample Output
-
-Insert screenshot:
-
-```text
-screenshots/splunk/<successful-login-alert>.png
-```
-
----
-
 ## Lessons Learned
 
 Successful authentication events provide important context during investigations and can be correlated with other detections to identify compromised accounts, lateral movement, or unauthorized access activity.
