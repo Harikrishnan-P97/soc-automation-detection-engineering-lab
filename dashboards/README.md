@@ -67,8 +67,8 @@ This directory contains Grafana dashboard exports that can be imported into anot
 
 Available exports:
 
-- [SOC-Alert-Dashboard](/exports/SOC%20Alert%20Dashboard.json)
-- [SOC-Alert-Investigation-Dashboard](/exports/SOC%20-%20Alert%20Investigation.json)
+- [SOC-Alert-Dashboard](./dashboards/exports/SOC%20Alert%20Dashboard.json)
+- [SOC-Alert-Investigation-Dashboard](./dashboards/exports/SOC%20-%20Alert%20Investigation.json)
 
 ## Screenshots
 
