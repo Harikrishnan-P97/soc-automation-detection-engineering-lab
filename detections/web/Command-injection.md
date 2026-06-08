@@ -153,12 +153,6 @@ The alert provides analysts with:
 * Risk Score
 * Investigation Context
 
-Screenshot:
-
-```text
-../../screenshots/splunk/Command-Injection-Detection-Splunk.png
-```
-
 ---
 
 ## Detection Use Cases

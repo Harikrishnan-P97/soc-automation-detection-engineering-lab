@@ -141,9 +141,7 @@ The alert provides analysts with:
 
 Screenshot:
 
-```text
-../../screenshots/splunk/SQL-Injection-Detection-Splunk.png
-```
+![SQL Injection Detection (Splunk)](../../screenshots/splunk/SQL-Injection-Detection-Splunk.png)
 
 ---
 

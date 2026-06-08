@@ -139,12 +139,6 @@ The alert provides analysts with:
 * Risk Score
 * Investigation Context
 
-Screenshot:
-
-```text
-../../screenshots/splunk/XSS-Detection-Splunk.png
-```
-
 ---
 
 ## Detection Use Cases
