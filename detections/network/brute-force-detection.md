@@ -85,9 +85,7 @@ This helps identify:
 
 ## Sample Output
 
-Insert screenshot:
-
-- screenshots/splunk/Port-Scanning-Detection-Suricata.png
+![Port Scanning Detection (Suricata)](screenshots/splunk/Port-Scanning-Detection-Suricata.png)
 
 ---
 
