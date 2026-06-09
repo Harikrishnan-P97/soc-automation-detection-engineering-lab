@@ -2,6 +2,7 @@
 
 ![SOC Lab Architecture](assets/SOC-Lab-Architecture-diagram.png)
 
+SOC Platform
 ![Splunk](https://img.shields.io/badge/Splunk-000000?logo=splunk&logoColor=white)
 ![Grafana](https://img.shields.io/badge/Grafana-F46800?logo=grafana&logoColor=white)
 ![n8n](https://img.shields.io/badge/n8n-EA4B71?logo=n8n&logoColor=white)
@@ -9,23 +10,25 @@
 ![LimaCharlie](https://img.shields.io/badge/LimaCharlie-ED1C24)
 ![SOC](https://img.shields.io/badge/SOC-Detection%20Engineering-blue)
 
+Detection & Threat Hunting
 ![Suricata](https://img.shields.io/badge/Suricata-IDS%2FIPS-orange)
 ![ModSecurity](https://img.shields.io/badge/ModSecurity-WAF-green)
 ![OWASP%20CRS](https://img.shields.io/badge/OWASP-CRS-black)
 ![MITRE ATT&CK](https://img.shields.io/badge/MITRE-ATT%26CK-red)
 
+Attack Simulation
 ![Gophish](https://img.shields.io/badge/Gophish-Phishing%20Simulation-blue)
 ![Sliver](https://img.shields.io/badge/Sliver-C2%20Framework-red)
 ![DVWA](https://img.shields.io/badge/DVWA-Vulnerable%20Web%20App-red)
 
+Infrastructure
 ![VirtualBox](https://img.shields.io/badge/VirtualBox-183A61?logo=virtualbox&logoColor=white)
 ![pfSense](https://img.shields.io/badge/pfSense-212121?logo=pfsense&logoColor=white)
 ![Slack](https://img.shields.io/badge/Slack-4A154B?logo=slack&logoColor=white)
 ![Ngrok](https://img.shields.io/badge/ngrok-1F1E37?logo=ngrok&logoColor=white)
 
-![Repo Size](https://img.shields.io/github/repo-size/Harikrishnan-P97/soc-automation-detection-engineering-lab)
+Repository
 ![Last Commit](https://img.shields.io/github/last-commit/Harikrishnan-P97/soc-automation-detection-engineering-lab)
-![GitHub Stars](https://img.shields.io/github/stars/Harikrishnan-P97/soc-automation-detection-engineering-lab)
 
 A comprehensive Security Operations Center (SOC) simulation environment designed to emulate real-world detection engineering, security monitoring, incident response, threat hunting, and SOAR-style automation workflows.
 
