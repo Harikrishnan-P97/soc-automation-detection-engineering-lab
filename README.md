@@ -2,6 +2,18 @@
 
 ![SOC Lab Architecture](assets/SOC-Lab-Architecture-diagram.png)
 
+![Splunk](https://img.shields.io/badge/Splunk-000000?logo=splunk&logoColor=white)
+![Grafana](https://img.shields.io/badge/Grafana-F46800?logo=grafana&logoColor=white)
+![n8n](https://img.shields.io/badge/n8n-EA4B71?logo=n8n&logoColor=white)
+![VirtualBox](https://img.shields.io/badge/VirtualBox-183A61?logo=virtualbox&logoColor=white)
+![pfSense](https://img.shields.io/badge/pfSense-212121?logo=pfsense&logoColor=white)
+![MITRE ATT&CK](https://img.shields.io/badge/MITRE-ATT%26CK-red)
+![SOC](https://img.shields.io/badge/SOC-Detection%20Engineering-blue)
+![SOAR](https://img.shields.io/badge/SOAR-Automation-green)
+![Repo Size](https://img.shields.io/github/repo-size/Harikrishnan-P97/soc-automation-detection-engineering-lab)
+![Last Commit](https://img.shields.io/github/last-commit/Harikrishnan-P97/soc-automation-detection-engineering-lab)
+![GitHub Stars](https://img.shields.io/github/stars/Harikrishnan-P97/soc-automation-detection-engineering-lab)
+
 A comprehensive Security Operations Center (SOC) simulation environment designed to emulate real-world detection engineering, security monitoring, incident response, threat hunting, and SOAR-style automation workflows.
 
 This project integrates multiple security technologies to simulate the complete attack-to-response lifecycle, from attack execution and telemetry collection to detection, enrichment, investigation, containment, and response.
