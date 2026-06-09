@@ -5,11 +5,24 @@
 ![Splunk](https://img.shields.io/badge/Splunk-000000?logo=splunk&logoColor=white)
 ![Grafana](https://img.shields.io/badge/Grafana-F46800?logo=grafana&logoColor=white)
 ![n8n](https://img.shields.io/badge/n8n-EA4B71?logo=n8n&logoColor=white)
+![SOAR](https://img.shields.io/badge/SOAR-Automation-green)
+![LimaCharlie](https://img.shields.io/badge/LimaCharlie-ED1C24)
+![SOC](https://img.shields.io/badge/SOC-Detection%20Engineering-blue)
+
+![Suricata](https://img.shields.io/badge/Suricata-IDS%2FIPS-orange)
+![ModSecurity](https://img.shields.io/badge/ModSecurity-WAF-green)
+![OWASP%20CRS](https://img.shields.io/badge/OWASP-CRS-black)
+![MITRE ATT&CK](https://img.shields.io/badge/MITRE-ATT%26CK-red)
+
+![Gophish](https://img.shields.io/badge/Gophish-Phishing%20Simulation-blue)
+![Sliver](https://img.shields.io/badge/Sliver-C2%20Framework-red)
+![DVWA](https://img.shields.io/badge/DVWA-Vulnerable%20Web%20App-red)
+
 ![VirtualBox](https://img.shields.io/badge/VirtualBox-183A61?logo=virtualbox&logoColor=white)
 ![pfSense](https://img.shields.io/badge/pfSense-212121?logo=pfsense&logoColor=white)
-![MITRE ATT&CK](https://img.shields.io/badge/MITRE-ATT%26CK-red)
-![SOC](https://img.shields.io/badge/SOC-Detection%20Engineering-blue)
-![SOAR](https://img.shields.io/badge/SOAR-Automation-green)
+![Slack](https://img.shields.io/badge/Slack-4A154B?logo=slack&logoColor=white)
+![Ngrok](https://img.shields.io/badge/ngrok-1F1E37?logo=ngrok&logoColor=white)
+
 ![Repo Size](https://img.shields.io/github/repo-size/Harikrishnan-P97/soc-automation-detection-engineering-lab)
 ![Last Commit](https://img.shields.io/github/last-commit/Harikrishnan-P97/soc-automation-detection-engineering-lab)
 ![GitHub Stars](https://img.shields.io/github/stars/Harikrishnan-P97/soc-automation-detection-engineering-lab)
