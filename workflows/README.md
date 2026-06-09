@@ -61,9 +61,7 @@ Host Isolation / Alert Closure
 
 Workflow exports are available within:
 
-```text
-/exports/
-```
+- [exports](exports/)
 
 These exports can be imported into another n8n instance for educational and research purposes.
 

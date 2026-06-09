@@ -226,15 +226,13 @@ The phishing lab enables simulation of:
 
 ## Repository Structure
 
-```text
-architecture/
-dashboards/
-detections/
-docs/
-phishing-lab/
-screenshots/
-workflows/
-```
+- [architecture/](architecture/)
+- [dashboards/](dashboards/)
+- [detections/](detections/)
+- [docs/](docs/)
+- [phishing-lab/](phishing-lab/)
+- [screenshots/](screenshots/)
+- [workflows/](workflows/)
 
 | Folder       | Description                                 |
 | ------------ | ------------------------------------------- |

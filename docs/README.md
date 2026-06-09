@@ -77,9 +77,9 @@ For first-time visitors, the following order is recommended:
 
 ## Related Documentation
 
-* `/detections` — Detection engineering and Splunk correlation searches
-* `/workflows` — n8n SOAR workflows and automation
-* `/dashboards` — Grafana dashboards and exports
-* `/phishing-lab` — Phishing simulation environment and attack chain documentation
+* [Detections](detections/) — Detection engineering and Splunk correlation searches
+* [Workflows](workflows/) — n8n SOAR workflows and automation
+* [Dashboards](dashboards/) — Grafana dashboards and exports
+* [Phishing Lab](phishing-lab/) — Phishing simulation environment and attack chain documentation
 
 Together, these documents provide a complete overview of the SOC Automation & Detection Engineering Lab, including monitoring, detection, investigation, automation, and incident response capabilities.
