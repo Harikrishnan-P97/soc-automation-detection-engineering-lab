@@ -15,6 +15,7 @@ Detection & Threat Hunting :
 ![ModSecurity](https://img.shields.io/badge/ModSecurity-WAF-green)
 ![OWASP%20CRS](https://img.shields.io/badge/OWASP-CRS-black)
 ![MITRE ATT&CK](https://img.shields.io/badge/MITRE-ATT%26CK-red)
+![VirusTotal](https://img.shields.io/badge/VirusTotal-Enrichment-394EFF)
 
 Attack Simulation : 
 ![Gophish](https://img.shields.io/badge/Gophish-Phishing%20Simulation-blue)
